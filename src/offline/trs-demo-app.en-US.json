@@ -1,0 +1,14 @@
+{
+  "app.title": "Hii Retail corner shop",
+  "app.tagline": "A worked example of reading translations from Translation Service",
+  "app.greeting": "Hello, {name}",
+  "tenant.label": "Tenant id",
+  "tenant.hint": "Enter a tenant id to read that tenant's overrides. No sign-in needed.",
+  "tenant.shared": "Reading the shared address",
+  "language.label": "Language",
+  "cart.heading": "Your cart",
+  "cart.count": "{count, plural, one {{count} item} other {{count} items}}",
+  "cart.empty": "Your cart is empty",
+  "cart.total": "Total {amount}",
+  "checkout.button.pay": "Pay {amount}"
+}
