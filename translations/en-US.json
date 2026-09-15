@@ -1,0 +1,58 @@
+{
+  "app.title": {
+    "value": "Hii Retail corner shop",
+    "description": "Name of the demo application, shown as the page heading"
+  },
+  "app.tagline": {
+    "value": "A worked example of reading translations from Translation Service",
+    "description": "One-line explanation of what this application is, under the heading"
+  },
+  "app.greeting": {
+    "value": "Hello, {name}",
+    "description": "Greeting shown under the tagline. {name} is the visitor's first name",
+    "parameters": ["name"]
+  },
+  "tenant.label": {
+    "value": "Tenant id",
+    "description": "Label of the field where a visitor types the tenant whose text to read"
+  },
+  "tenant.hint": {
+    "value": "Enter a tenant id to read that tenant's overrides. No sign-in needed.",
+    "description": "Help text under the tenant field, explaining that reading is anonymous"
+  },
+  "tenant.shared": {
+    "value": "Reading the shared address",
+    "description": "Placeholder in the empty tenant field, meaning no tenant overrides are applied"
+  },
+  "language.label": {
+    "value": "Language",
+    "description": "Label of the language picker"
+  },
+  "cart.heading": {
+    "value": "Your cart",
+    "description": "Heading above the shopping cart summary"
+  },
+  "cart.count": {
+    "value": "{count} items",
+    "description": "How many lines are in the cart",
+    "parameters": ["count"],
+    "plural": {
+      "parameter": "count",
+      "forms": { "one": "{count} item", "other": "{count} items" }
+    }
+  },
+  "cart.empty": {
+    "value": "Your cart is empty",
+    "description": "Shown instead of the cart lines when nothing has been added"
+  },
+  "cart.total": {
+    "value": "Total {amount}",
+    "description": "Order total. {amount} is already formatted with its currency",
+    "parameters": ["amount"]
+  },
+  "checkout.button.pay": {
+    "value": "Pay {amount}",
+    "description": "Label of the button that starts payment. {amount} is already formatted with its currency",
+    "parameters": ["amount"]
+  }
+}

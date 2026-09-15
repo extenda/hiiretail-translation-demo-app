@@ -1,0 +1,25 @@
+{
+  "app.title": { "value": "Hii Retail närbutik" },
+  "app.tagline": {
+    "value": "Ett fungerande exempel på att läsa översättningar från Translation Service"
+  },
+  "app.greeting": { "value": "Hej, {name}", "parameters": ["name"] },
+  "tenant.label": { "value": "Tenant-id" },
+  "tenant.hint": {
+    "value": "Ange ett tenant-id för att läsa den kundens texter. Ingen inloggning krävs."
+  },
+  "tenant.shared": { "value": "Läser den delade adressen" },
+  "language.label": { "value": "Språk" },
+  "cart.heading": { "value": "Din varukorg" },
+  "cart.count": {
+    "value": "{count} varor",
+    "parameters": ["count"],
+    "plural": {
+      "parameter": "count",
+      "forms": { "one": "{count} vara", "other": "{count} varor" }
+    }
+  },
+  "cart.empty": { "value": "Din varukorg är tom" },
+  "cart.total": { "value": "Totalt {amount}", "parameters": ["amount"] },
+  "checkout.button.pay": { "value": "Betala {amount}", "parameters": ["amount"] }
+}

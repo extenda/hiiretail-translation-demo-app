@@ -1,0 +1,25 @@
+{
+  "app.title": { "value": "Hii Retail lähikauppa" },
+  "app.tagline": {
+    "value": "Toimiva esimerkki käännösten lukemisesta Translation Servicestä"
+  },
+  "app.greeting": { "value": "Hei, {name}", "parameters": ["name"] },
+  "tenant.label": { "value": "Vuokralaisen tunnus" },
+  "tenant.hint": {
+    "value": "Anna vuokralaisen tunnus lukeaksesi kyseisen asiakkaan tekstit. Kirjautumista ei tarvita."
+  },
+  "tenant.shared": { "value": "Luetaan jaettua osoitetta" },
+  "language.label": { "value": "Kieli" },
+  "cart.heading": { "value": "Ostoskorisi" },
+  "cart.count": {
+    "value": "{count} tuotetta",
+    "parameters": ["count"],
+    "plural": {
+      "parameter": "count",
+      "forms": { "one": "{count} tuote", "other": "{count} tuotetta" }
+    }
+  },
+  "cart.empty": { "value": "Ostoskorisi on tyhjä" },
+  "cart.total": { "value": "Yhteensä {amount}", "parameters": ["amount"] },
+  "checkout.button.pay": { "value": "Maksa {amount}", "parameters": ["amount"] }
+}
