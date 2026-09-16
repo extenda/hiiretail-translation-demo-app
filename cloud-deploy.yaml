@@ -6,6 +6,13 @@ cloud-run:
     memory: 512Mi
   scaling:
     concurrency: 80
+  traffic:
+    static-egress-ip: false
+    # Required by the schema. Nothing here talks to a VPC — the app serves static files and
+    # reads translations over the public endpoint — but every other service sets it, and
+    # this is not the repository to diverge from that in.
+    direct-vpc-connection: true
+    serve-traffic: false
 
 # The whole point of the demo is that a visitor needs nothing at all to read translations.
 security: none
