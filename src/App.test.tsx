@@ -15,6 +15,13 @@ describe("App", () => {
     // From src/offline/trs-demo-app.en-US.json, not from the network.
     expect(await screen.findByText("Hii Retail corner shop")).toBeInTheDocument();
     expect(screen.queryByText("app.title")).not.toBeInTheDocument();
+
+    // The bundle is the service's own output, where a literal apostrophe is ICU-escaped
+    // as ''. It has to come back out as one apostrophe, or the offline copy reads wrong
+    // in a way the network copy does not.
+    expect(
+      screen.getByText("Enter a tenant id to read that tenant's overrides. No sign-in needed."),
+    ).toBeInTheDocument();
   });
 
   it("reads the tenant address once a tenant id is entered", async () => {

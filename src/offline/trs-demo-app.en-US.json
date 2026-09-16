@@ -3,7 +3,7 @@
   "app.tagline": "A worked example of reading translations from Translation Service",
   "app.greeting": "Hello, {name}",
   "tenant.label": "Tenant id",
-  "tenant.hint": "Enter a tenant id to read that tenant's overrides. No sign-in needed.",
+  "tenant.hint": "Enter a tenant id to read that tenant''s overrides. No sign-in needed.",
   "tenant.shared": "Reading the shared address",
   "language.label": "Language",
   "cart.heading": "Your cart",
