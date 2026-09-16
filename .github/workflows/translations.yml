@@ -1,0 +1,70 @@
+# Publishes this app's own default layer — the key set every translation is measured
+# against. The managed and tenant seed layers under seed/ are NOT published here: they are
+# gated on an Extenda IAM grant that no CI service account holds. See
+# scripts/publish-seed-layers.sh.
+name: Translations
+
+on:
+  push:
+    branches:
+      - master
+    paths:
+      - translations/**
+      - .github/workflows/translations.yml
+  pull_request:
+    paths:
+      - translations/**
+      - .github/workflows/translations.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  MODULE_ID: trs-demo-app
+  TRANSLATIONS_PATH: translations/
+
+jobs:
+  # A pull request only validates: it reports whether a real run would publish or skip.
+  dry-run:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: extenda/actions/translations@v0
+        with:
+          service-account-key: ${{ secrets.GCLOUD_AUTH_STAGING }}
+          module-id: ${{ env.MODULE_ID }}
+          path: ${{ env.TRANSLATIONS_PATH }}
+          environment: staging
+          dry-run: 'true'
+
+  publish:
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    strategy:
+      max-parallel: 1
+      matrix:
+        include:
+          - environment: staging
+            host: https://translation.retailsvc.dev
+          - environment: prod
+            host: https://translation.retailsvc.com
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: extenda/actions/translations@v0
+        with:
+          service-account-key: ${{ matrix.environment == 'prod' && secrets.GCLOUD_AUTH_PROD || secrets.GCLOUD_AUTH_STAGING }}
+          module-id: ${{ env.MODULE_ID }}
+          path: ${{ env.TRANSLATIONS_PATH }}
+          environment: ${{ matrix.environment }}
+
+      - name: Read the module back anonymously
+        run: |
+          body=$(curl -sf "${{ matrix.host }}/api/v1/modules/${{ env.MODULE_ID }}/translations/en-US")
+          echo "$body" | jq .
+          echo "$body" | jq -e '.layer == "resolved"' > /dev/null
+          echo "$body" | jq -e '.entries["cart.count"] | contains("plural")' > /dev/null

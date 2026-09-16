@@ -1,0 +1,57 @@
+name: Build and Deploy
+on: push
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '24'
+
+      - name: NPM install
+        run: npm ci
+
+      - name: Test
+        run: npm test
+
+      # Refreshes the committed offline bundle so a release ships current text. Never fails
+      # the build on its own: the committed copy is a valid fallback, which is the whole
+      # point of bundling it.
+      - name: Refresh offline bundle
+        continue-on-error: true
+        run: ./scripts/bundle-translations.sh en-US
+
+      - name: Build
+        run: npm run build
+
+      - uses: extenda/actions/setup-gcloud@v0
+        id: gcloud
+        with:
+          service-account-key: ${{ secrets.GCLOUD_AUTH_PROD }}
+
+      - name: Build and push Docker
+        run: |
+          gcloud --quiet auth configure-docker
+          IMAGE=eu.gcr.io/extenda/hiiretail-translation-demo-app:${{ github.sha }}
+          docker build -t $IMAGE .
+          docker push $IMAGE
+
+      - name: Attest image
+        uses: extenda/actions/binary-auth-attestation@v0
+        with:
+          image-path: eu.gcr.io/extenda/hiiretail-translation-demo-app:${{ github.sha }}
+          service-account-key: ${{ secrets.GCLOUD_AUTH_PROD }}
+
+      - name: Deploy
+        if: github.ref == 'refs/heads/master'
+        uses: extenda/actions/cloud-deploy@v0
+        with:
+          secrets-account-key: ${{ secrets.SECRET_AUTH }}
+          service-account-key: ${{ secrets.GCLOUD_AUTH_PROD }}
+          image: eu.gcr.io/extenda/hiiretail-translation-demo-app:${{ github.sha }}

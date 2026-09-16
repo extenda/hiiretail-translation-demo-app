@@ -1,0 +1,25 @@
+cloud-run:
+  service: translation-demo-app
+  protocol: http
+  resources:
+    cpu: 1
+    memory: 512Mi
+  scaling:
+    concurrency: 80
+
+# The whole point of the demo is that a visitor needs nothing at all to read translations.
+security: none
+
+labels:
+  component: translation-demo-app
+  product: trs
+
+environments:
+  staging:
+    min-instances: 0
+    max-instances: 1
+  production:
+    min-instances: 0
+    max-instances: 1
+    domain-mappings:
+      - translation-demo.retailsvc.com
