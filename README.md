@@ -36,10 +36,16 @@ npm install
 npm run dev
 ```
 
-No proxy, no token, no local Translation Service. Reads are anonymous `GET`s and the service
-sends CORS headers, so the browser talks to production directly — in dev exactly as in
-production. That is deliberate: a demo that only works behind a dev proxy would not
-demonstrate the thing it claims to.
+No proxy, no token, no local Translation Service. Reads are anonymous `GET`s and the browser
+talks to production directly — in dev exactly as in production. That is deliberate: a demo
+that only works behind a dev proxy would not demonstrate the thing it claims to.
+
+> **This depends on a service change that has not shipped yet.** Translation Service
+> currently enables CORS only in the `local` environment, so staging and production return
+> no `Access-Control-Allow-Origin` and a browser drops every response — the app falls back
+> to its bundled English and the tenant field and language selector do nothing.
+> [extenda/hiiretail-translation-service#40](https://github.com/extenda/hiiretail-translation-service/pull/40)
+> fixes that. Delete this note once it is deployed.
 
 ```bash
 npm test          # vitest
