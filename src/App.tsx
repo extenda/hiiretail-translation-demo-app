@@ -4,6 +4,7 @@ import { DEFAULT_LANG_TAG } from "./config";
 import { initI18n, reinitI18n } from "./i18n/init";
 import { fetchLanguageTags } from "./api/language-tags";
 import { useTenantId } from "./hooks/useTenantId";
+import { useLanguageTag } from "./hooks/useLanguageTag";
 import { useRoute } from "./hooks/useRoute";
 import { AdminPage } from "./admin/AdminPage";
 import { TenantForm } from "./components/TenantForm";
@@ -43,7 +44,20 @@ function Shell({
       <p>{t("app.tagline")}</p>
       <p>{t("app.greeting", { name: VISITOR_NAME })}</p>
       <TenantForm tenantId={tenantId} onSubmit={setTenantId} />
-      <LanguageSelector tags={tags} current={langTag} onChange={setLangTag} />
+      {/* A tenant's own language is absent from /language-tags, which covers the default
+          and managed layers alone. The url can still name one, so the selector offers
+          whatever it was asked for rather than silently falling back to English. */}
+      <LanguageSelector
+        tags={tags.includes(langTag) ? tags : [...tags, langTag].sort()}
+        current={langTag}
+        onChange={setLangTag}
+      />
+      {!tags.includes(langTag) && (
+        <p className="hint">
+          {langTag} is not in this module's published list — it is reachable because the
+          address names it. A language a tenant publishes for itself is never listed.
+        </p>
+      )}
       <ErrorNote message={error} />
       <Storefront itemCount={DEMO_ITEM_COUNT} />
       <p className="hint">
@@ -56,7 +70,7 @@ function Shell({
 export function App() {
   const { tenantId, setTenantId } = useTenantId();
   const route = useRoute();
-  const [langTag, setLangTag] = useState(DEFAULT_LANG_TAG);
+  const { langTag, setLangTag } = useLanguageTag();
   const [ready, setReady] = useState(false);
   const started = useRef(false);
 

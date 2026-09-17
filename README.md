@@ -74,6 +74,17 @@ secret, and both read endpoints are public by design.
 mutating the live instance. That is why the tenant lives in the URL and not in component
 state.
 
+The language lives there too, for a reason the tenant layer makes plain:
+
+```
+https://translation-demo.retailsvc.com/?tenant=acme&lang=sv-SE
+```
+
+`GET /modules/trs-demo-app/language-tags` covers the `default` and `managed` layers alone,
+so a language a tenant publishes **for itself is never listed** and the selector can never
+offer it. Naming it in the address is the only way to reach it, and the selector adds
+whatever the URL asked for so the state stays visible. Omit `lang` and it is `en-US`.
+
 ## Caching
 
 There is no caching code in this repository, and there should not be. Reads come back with:
@@ -171,6 +182,19 @@ TRS_TOKEN=... ./scripts/publish-seed-layers.sh
 
 [The publishing page](#the-publishing-page) does the same thing interactively with the same
 token, one language at a time.
+
+A staff token can publish the `tenant` layer but not `managed`: both need
+`trs.translation.publish`, and `managed` additionally needs the caller to be in the Extenda
+tenant (`check_tenant_extenda` in the service's `ingress.rego`), which is the guard that
+keeps a tenant admin out of the copy every tenant reads. A denial arrives from the gateway
+with an empty body, so the status is the whole message — the publishing page spells out
+what each one means.
+
+The Swedish tenant overrides in `seed/tenant/` are published for tenant
+`CIR7nQwtS0rA6t0S6ejd` and visible at
+[`?tenant=CIR7nQwtS0rA6t0S6ejd&lang=sv-SE`](https://translation-demo.retailsvc.com/?tenant=CIR7nQwtS0rA6t0S6ejd&lang=sv-SE).
+They do not appear in the language list, and they never will — see [Tenant
+scope](#tenant-scope).
 
 Once such a principal exists as a CI identity, that script becomes a workflow step and this
 section goes away.

@@ -98,6 +98,39 @@ describe("App", () => {
     expect(window.location.search).toBe("?tenant=acme");
   });
 
+  it("shows a tenant's own language, which the published list never mentions", async () => {
+    // Verified against production: a tenant-layer publish of sv-SE reads back at the
+    // tenant address, while /language-tags still answers ["en-US"] because it covers the
+    // default and managed layers alone. Without the url naming the language, the selector
+    // could never reach what was just published.
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockImplementation((url: string) => {
+        const target = String(url);
+        if (target.includes("/language-tags")) {
+          return Promise.resolve(
+            new Response(JSON.stringify({ moduleId: "trs-demo-app", languageTags: ["en-US"] })),
+          );
+        }
+        if (target.includes("/tenants/acme/") && target.endsWith("/sv-SE")) {
+          return Promise.resolve(
+            new Response(JSON.stringify({ entries: { "app.title": "Demobutiken" } })),
+          );
+        }
+        return Promise.reject(new TypeError("offline"));
+      }),
+    );
+    window.history.replaceState({}, "", "/?tenant=acme&lang=sv-SE");
+
+    render(<App />);
+
+    expect(await screen.findByText("Demobutiken")).toBeInTheDocument();
+    expect(screen.getByLabelText("Language")).toHaveValue("sv-SE");
+    expect(
+      screen.getByText(/is not in this module's published list/),
+    ).toBeInTheDocument();
+  });
+
   it("reads the tenant address once a tenant id is entered", async () => {
     const fetchSpy = vi.fn().mockRejectedValue(new TypeError("offline"));
     vi.stubGlobal("fetch", fetchSpy);
