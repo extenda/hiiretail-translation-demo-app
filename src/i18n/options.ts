@@ -19,6 +19,10 @@ export function buildInitOptions(
     // Both languages fetched before init() resolves, not lazily. Drop en-US here and a
     // missing key renders as the raw key.
     preload: [...new Set([langTag, DEFAULT_LANG_TAG])],
+    // The service serves full RFC 5646 tags only. i18next's default, "all", resolves
+    // en-US to ["en-US", "en"] and has the backend fetch both, so every load fires a
+    // second request for the bare subtag that comes back 400.
+    load: "currentOnly",
     // Keys are flat ("cart.count"), not nested. Without these, i18next looks for a
     // nested cart -> count object, finds nothing, and renders the raw key.
     keySeparator: false,
@@ -31,6 +35,19 @@ export function buildInitOptions(
     // new publish.
     partialBundledLanguages: true,
     resources: { [DEFAULT_LANG_TAG]: { translation: bundledEnUS } },
-    backend: { loadPath: loadPath(tenantId) },
+    // react-i18next re-renders on languageChanged alone by default, so a bundle that
+    // lands after the first paint — which is every network read, now that the bundled
+    // copy renders first — would be stored and never shown.
+    react: { bindI18nStore: "added" },
+    backend: {
+      loadPath: loadPath(tenantId),
+      // A read answers an envelope — {module, langTag, layer, format, entries} — and the
+      // flat key map i18next wants is one field inside it. The default parse is
+      // JSON.parse of the whole body, which stores the envelope as the bundle: every key
+      // then misses and falls back to the committed copy, so the page looks right while
+      // showing nothing the service actually said. scripts/bundle-translations.sh takes
+      // `.entries` for the same reason.
+      parse: (data: string) => JSON.parse(data).entries,
+    },
   };
 }

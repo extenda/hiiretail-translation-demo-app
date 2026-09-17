@@ -15,7 +15,11 @@ export function initI18n(tenantId: string | undefined, langTag: string) {
     .use(HttpBackend)
     .use(ICU)
     .use(initReactI18next)
-    .init(buildInitOptions(tenantId, langTag));
+    .init(buildInitOptions(tenantId, langTag))
+    .then((t) => {
+      refresh(langTag);
+      return t;
+    });
 }
 
 /**
@@ -23,5 +27,25 @@ export function initI18n(tenantId: string | undefined, langTag: string) {
  * rather than mutating the live instance.
  */
 export function reinitI18n(tenantId: string | undefined, langTag: string) {
-  return i18next.init(buildInitOptions(tenantId, langTag));
+  return i18next.init(buildInitOptions(tenantId, langTag)).then((t) => {
+    refresh(langTag);
+    return t;
+  });
+}
+
+/**
+ * The backend skips any language already in the store (`queueLoad` marks it loaded when
+ * `store.hasResourceBundle` is true), and en-US is always in the store because it ships
+ * bundled. `partialBundledLanguages` only decides whether the backend is consulted at
+ * all; it does not make the connector re-read a language it thinks it has. So without
+ * this reload the app serves its committed copy of en-US forever and never reads the
+ * service — and switching tenant fetches nothing, because the new loadPath is only ever
+ * used for a language the store is missing.
+ *
+ * Deliberately not awaited: init resolves on the bundled copy so the page paints at once,
+ * and the network read lands on top of it. A read that fails changes nothing, which is
+ * the offline story. Values arrive by shallow merge, so the fetched copy wins per key.
+ */
+function refresh(langTag: string): void {
+  void i18next.reloadResources([langTag]).catch(() => undefined);
 }

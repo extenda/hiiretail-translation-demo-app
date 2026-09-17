@@ -23,7 +23,11 @@ on in a test. Every field in it is load-bearing and the comments say what breaks
 | `keySeparator: false`, `nsSeparator: false` | `t("cart.count")` looks for a nested `cart` → `count` object, finds nothing, renders the raw key |
 | `en-US` in `preload` + `fallbackLng` | a key missing from the target language renders as the raw key |
 | `interpolation: { escapeValue: false }` | React escapes again and `&`/`<` come out double-escaped |
-| `partialBundledLanguages: true` | i18next skips the backend for any language in `resources` — stuck on the last release forever |
+| `partialBundledLanguages: true` | i18next never consults the backend at all once `resources` is set |
+| `load: "currentOnly"` | `en-US` also resolves to bare `en`, and every load fires a second request the service answers `400` |
+| `backend.parse` | the whole `{module, langTag, entries}` envelope is stored as the bundle, every key misses, and the committed copy renders in its place |
+| `react: { bindI18nStore: "added" }` | the network copy arrives after the first paint, is stored, and is never rendered |
+| `reloadResources` (in [`init.ts`](src/i18n/init.ts)) | the backend skips `en-US` because it is already in the store, so the service is never read |
 | `i18next-icu` (in [`init.ts`](src/i18n/init.ts)) | a plural renders as raw `{count, plural, ...}` syntax |
 
 [`src/i18n/load-path.ts`](src/i18n/load-path.ts) is the other half: one URL template, and a

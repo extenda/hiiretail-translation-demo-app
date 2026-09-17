@@ -24,6 +24,67 @@ describe("App", () => {
     ).toBeInTheDocument();
   });
 
+  it("renders what the service returns, not the bundled copy underneath it", async () => {
+    // The read endpoint answers an envelope — {module, langTag, layer, format, entries}
+    // — and the flat key map is one field inside it. Parse the envelope as the bundle and
+    // every key misses, falls back to the committed copy, and the page looks correct
+    // while showing nothing the service said.
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockImplementation((url: string) =>
+        String(url).includes("/translations/")
+          ? Promise.resolve(
+              new Response(
+                JSON.stringify({
+                  module: "trs-demo-app",
+                  langTag: "en-US",
+                  layer: "resolved",
+                  format: "icu",
+                  entries: { "app.title": "Published from the service" },
+                }),
+                { status: 200, headers: { "Content-Type": "application/json" } },
+              ),
+            )
+          : Promise.reject(new TypeError("offline")),
+      ),
+    );
+
+    render(<App />);
+
+    expect(await screen.findByText("Published from the service")).toBeInTheDocument();
+  });
+
+  it("reads the bundled language from the service rather than trusting the bundle", async () => {
+    const fetchSpy = vi.fn().mockRejectedValue(new TypeError("offline"));
+    vi.stubGlobal("fetch", fetchSpy);
+
+    render(<App />);
+    await screen.findByText("Hii Retail corner shop");
+
+    // en-US is in `resources`, and the backend connector skips any language already in
+    // the store. Without an explicit reload the app renders its committed bundle forever
+    // and never reads the service at all — which is the one thing it exists to show.
+    await waitFor(() => {
+      const urls = fetchSpy.mock.calls.map((call) => String(call[0]));
+      expect(urls).toContain(
+        "https://translation.retailsvc.com/api/v1/modules/trs-demo-app/translations/en-US",
+      );
+    });
+  });
+
+  it("never requests a bare language subtag", async () => {
+    const fetchSpy = vi.fn().mockRejectedValue(new TypeError("offline"));
+    vi.stubGlobal("fetch", fetchSpy);
+
+    render(<App />);
+    await screen.findByText("Hii Retail corner shop");
+
+    // The service answers 400 for anything short of a full RFC 5646 tag, so a request
+    // ending in /en is a failed round trip on every load, not a harmless extra.
+    const urls = fetchSpy.mock.calls.map((call) => String(call[0]));
+    expect(urls.filter((url) => /\/translations\/[a-z]{2}$/.test(url))).toEqual([]);
+  });
+
   it("reads the tenant address once a tenant id is entered", async () => {
     const fetchSpy = vi.fn().mockRejectedValue(new TypeError("offline"));
     vi.stubGlobal("fetch", fetchSpy);
