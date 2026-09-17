@@ -120,8 +120,10 @@ export async function publishLayer({
 }
 
 /**
- * The service answers a failed publish with a message naming the offending key and field,
- * written to be read. Showing it verbatim beats any summary this page could invent.
+ * A rejected publish carries a message naming the offending key and field, written to be
+ * read; showing it verbatim beats any summary this page could invent. The authorization
+ * failures are the exception — the gateway denies those in Rego before the service sees
+ * the request, so the body is empty and the status is all there is.
  */
 async function violationsOf(response: Response): Promise<string[]> {
   try {
@@ -129,8 +131,21 @@ async function violationsOf(response: Response): Promise<string[]> {
     if (Array.isArray(body.message)) return body.message;
     if (body.message) return [body.message];
   } catch {
-    // A body that is not JSON tells us nothing the status has not already.
+    // Not JSON — the status is all we have, so say what it means.
   }
 
-  return [`The service answered ${response.status}.`];
+  return [explain(response.status)];
+}
+
+function explain(status: number): string {
+  if (status === 401) return "The token was rejected. It may have expired — they are short lived.";
+
+  // Both publishable layers need trs.translation.publish; managed also needs the caller
+  // to be in the Extenda tenant, which is what keeps a tenant admin out of the copy every
+  // tenant reads. A principal that can publish `tenant` can still be denied `managed`.
+  if (status === 403) {
+    return "Not allowed to publish this layer. The managed layer additionally requires a principal in the Extenda tenant; the tenant layer needs only trs.translation.publish.";
+  }
+
+  return `The service answered ${status}.`;
 }

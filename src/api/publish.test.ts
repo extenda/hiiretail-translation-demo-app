@@ -143,6 +143,28 @@ describe("publishLayer", () => {
     });
   });
 
+  it("explains an empty-bodied 403, which is what the gateway actually returns", async () => {
+    // Denied in Rego before the service sees it, so there is no message to show. Verified
+    // against production: a publish to `managed` from a principal outside the Extenda
+    // tenant answers 403 with content-length 0, while `tenant` answers 201.
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(null, { status: 403 })));
+
+    await expect(
+      publishLayer({ token: "t", layer: "managed", langTag: "sv-SE", entries }),
+    ).rejects.toMatchObject({
+      status: 403,
+      violations: [expect.stringContaining("Extenda tenant")],
+    });
+  });
+
+  it("says an empty-bodied 401 is probably an expired token", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(null, { status: 401 })));
+
+    await expect(
+      publishLayer({ token: "t", layer: "tenant", langTag: "sv-SE", entries }),
+    ).rejects.toMatchObject({ violations: [expect.stringContaining("expired")] });
+  });
+
   it("carries a single-string message through as one violation", async () => {
     vi.stubGlobal("fetch", respond(401, { message: "Unauthorized" }));
 
