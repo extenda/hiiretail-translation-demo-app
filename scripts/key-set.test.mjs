@@ -27,3 +27,24 @@ it("the seeded languages cover the same keys as the default layer", () => {
     );
   }
 });
+
+it("a seeded translation carries no field the default layer owns", () => {
+  // The service answers 422 for description, parameters or plural.parameter outside the
+  // default layer: a translation restates the copy, never the contract behind it.
+  const seeds = [
+    "seed/managed/sv-SE.json",
+    "seed/managed/fi-FI.json",
+    "seed/tenant/demo-tenant/sv-SE.json",
+  ];
+
+  for (const path of seeds) {
+    for (const [key, entry] of Object.entries(JSON.parse(readFileSync(path, "utf8")))) {
+      expect(entry.description, `${path} ${key} carries a description`).toBeUndefined();
+      expect(entry.parameters, `${path} ${key} carries parameters`).toBeUndefined();
+      expect(
+        entry.plural?.parameter,
+        `${path} ${key} carries plural.parameter`,
+      ).toBeUndefined();
+    }
+  }
+});

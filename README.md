@@ -111,6 +111,38 @@ runs the same action as a dry run.
 Descriptions in that file are written for whoever translates the key. They are the only
 context a translator gets.
 
+## The publishing page
+
+[`#/admin`](https://translation-demo.retailsvc.com/#/admin) is the other half of the
+integration: the storefront shows an anonymous read, and this shows the authenticated write
+behind it — the half a client app never performs and the guide can otherwise only describe.
+
+Paste a token from a principal holding `trs.translation.publish`, pick `managed` or
+`tenant`, pick a published language or type a new tag, and the form fills with that
+language's current file. Publishing `PUT`s the layer file and reports `201` created or
+`200` replaced; a rejection is shown as the service's own violation list, which names the
+key and field it objected to.
+
+The page is shaped by what the API allows, and four of its rules are visible in the UI:
+
+- **Adding a language and editing one are the same call.** A publish replaces the whole
+  layer file for that tag, so the form opens on what is already there — otherwise a
+  publish would truncate every key the editor did not show.
+- **There is no delete.** The service exposes publish only, so nothing here removes a
+  language. That is stated on the page rather than hidden behind a control that cannot work.
+- **A plural key needs every form the target language uses.** Swedish takes two, Polish
+  four. The page asks for one box per category from `Intl.PluralRules`, which is the set
+  the service validates against.
+- **`description` and `parameters` never travel.** The `default` layer owns them; sending
+  either is a 422. A translation restates the copy, never the contract behind it.
+
+The `default` layer is deliberately absent: CI publishes it from `translations/en-US.json`
+on every merge, so an edit here would be reverted by the next one.
+
+A tenant publish lands on the tenant in the token, never one named by the request — the
+`?tenant=` box scopes reads on the storefront and has no bearing on where a write goes.
+The token is held in memory for the page and never stored, logged or put in the URL.
+
 ## Known gap: the language selector shows only English
 
 The selector lists what `GET /modules/trs-demo-app/language-tags` returns, which covers the
@@ -136,6 +168,9 @@ the **Translation Admin** role (`trs.admin`):
 ```bash
 TRS_TOKEN=... ./scripts/publish-seed-layers.sh
 ```
+
+[The publishing page](#the-publishing-page) does the same thing interactively with the same
+token, one language at a time.
 
 Once such a principal exists as a CI identity, that script becomes a workflow step and this
 section goes away.

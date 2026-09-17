@@ -4,6 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { App } from "./App";
 
 beforeEach(() => window.history.replaceState({}, "", "/"));
+afterEach(() => window.history.replaceState({}, "", "/"));
 afterEach(() => vi.unstubAllGlobals());
 
 describe("App", () => {
@@ -83,6 +84,18 @@ describe("App", () => {
     // ending in /en is a failed round trip on every load, not a harmless extra.
     const urls = fetchSpy.mock.calls.map((call) => String(call[0]));
     expect(urls.filter((url) => /\/translations\/[a-z]{2}$/.test(url))).toEqual([]);
+  });
+
+  it("serves the publishing page from the hash, leaving the query string to the tenant", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new TypeError("offline")));
+    window.history.replaceState({}, "", "/?tenant=acme#/admin");
+
+    render(<App />);
+
+    expect(await screen.findByText("Publish a translation")).toBeInTheDocument();
+    // A hash route means server/index.mjs still sees a request for "/" — no SPA fallback.
+    expect(window.location.pathname).toBe("/");
+    expect(window.location.search).toBe("?tenant=acme");
   });
 
   it("reads the tenant address once a tenant id is entered", async () => {

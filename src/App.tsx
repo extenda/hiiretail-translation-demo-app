@@ -4,6 +4,8 @@ import { DEFAULT_LANG_TAG } from "./config";
 import { initI18n, reinitI18n } from "./i18n/init";
 import { fetchLanguageTags } from "./api/language-tags";
 import { useTenantId } from "./hooks/useTenantId";
+import { useRoute } from "./hooks/useRoute";
+import { AdminPage } from "./admin/AdminPage";
 import { TenantForm } from "./components/TenantForm";
 import { LanguageSelector } from "./components/LanguageSelector";
 import { Storefront } from "./components/Storefront";
@@ -44,12 +46,16 @@ function Shell({
       <LanguageSelector tags={tags} current={langTag} onChange={setLangTag} />
       <ErrorNote message={error} />
       <Storefront itemCount={DEMO_ITEM_COUNT} />
+      <p className="hint">
+        <a href="#/admin">Publish a translation →</a>
+      </p>
     </main>
   );
 }
 
 export function App() {
   const { tenantId, setTenantId } = useTenantId();
+  const route = useRoute();
   const [langTag, setLangTag] = useState(DEFAULT_LANG_TAG);
   const [ready, setReady] = useState(false);
   const started = useRef(false);
@@ -66,6 +72,10 @@ export function App() {
   }, [tenantId, langTag]);
 
   if (!ready) return null;
+
+  // The publishing page is not translated by this app's own key set, so it does not wait
+  // on i18next beyond the init above.
+  if (route === "admin") return <AdminPage tenantId={tenantId} />;
 
   return (
     <Shell

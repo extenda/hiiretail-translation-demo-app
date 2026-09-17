@@ -14,12 +14,16 @@ HOST=${TRS_HOST:-https://translation.retailsvc.com}
 TENANT=${TRS_SEED_TENANT:-demo-tenant}
 : "${TRS_TOKEN:?set TRS_TOKEN to a token holding trs.translation.publish}"
 
+# The seed files are flat key maps, matching the shape a read answers under `entries`. A
+# publish body is the envelope around that map, so wrap it here rather than storing the
+# same translations twice in two shapes.
 publish() {
   local url=$1 file=$2
-  curl -fsS -X PUT "$url" \
-    -H "Authorization: Bearer ${TRS_TOKEN}" \
-    -H "Content-Type: application/json" \
-    --data-binary "@${file}" > /dev/null
+  jq '{entries: .}' "$file" \
+    | curl -fsS -X PUT "$url" \
+      -H "Authorization: Bearer ${TRS_TOKEN}" \
+      -H "Content-Type: application/json" \
+      --data-binary @- > /dev/null
   echo "published ${file} -> ${url}"
 }
 
