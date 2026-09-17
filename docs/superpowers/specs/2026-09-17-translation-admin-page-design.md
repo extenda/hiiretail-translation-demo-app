@@ -153,3 +153,20 @@ Admin tests follow `App.test.tsx`: stub `fetch`, assert method, URL, `Authorizat
 and request body; assert the token reaches neither storage nor the URL; assert a 422 body
 renders its violations; assert the plural inputs for a tag match that language's
 categories. TDD throughout — the failing test first.
+
+## What the first real publish showed
+
+Run against production with a staff token, after the page was built:
+
+- **`tenant` publishes; `managed` does not.** `PUT .../layers/tenant` answered `201` and
+  read back at the tenant address. The same token on `.../layers/managed` answered `403`
+  with an empty body. Both layers need `trs.translation.publish`, and the `tenant` publish
+  succeeding proves the principal holds it — so the guard that fires on `managed` is
+  `check_tenant_extenda` in the service's `ingress.rego`, not a missing permission. The
+  page now says which is which, because the gateway denies in Rego and sends no message.
+- **A tenant's language is unreachable by selector.** `/language-tags` still answered
+  `["en-US"]` after the sv-SE tenant publish, because it covers `default` and `managed`
+  only. The page could therefore publish something the storefront could never display.
+  The language moved into the URL beside the tenant to close that.
+
+Neither was visible from the API surface alone; both came out of making the call.
