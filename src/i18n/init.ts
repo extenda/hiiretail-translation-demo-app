@@ -2,6 +2,7 @@ import i18next from "i18next";
 import HttpBackend from "i18next-http-backend";
 import ICU from "i18next-icu";
 import { initReactI18next } from "react-i18next";
+import { DEFAULT_LANG_TAG } from "../config";
 import { buildInitOptions } from "./options";
 
 /**
@@ -17,7 +18,7 @@ export function initI18n(tenantId: string | undefined, langTag: string) {
     .use(initReactI18next)
     .init(buildInitOptions(tenantId, langTag))
     .then((t) => {
-      refresh(langTag);
+      refresh();
       return t;
     });
 }
@@ -28,7 +29,7 @@ export function initI18n(tenantId: string | undefined, langTag: string) {
  */
 export function reinitI18n(tenantId: string | undefined, langTag: string) {
   return i18next.init(buildInitOptions(tenantId, langTag)).then((t) => {
-    refresh(langTag);
+    refresh();
     return t;
   });
 }
@@ -42,10 +43,16 @@ export function reinitI18n(tenantId: string | undefined, langTag: string) {
  * service — and switching tenant fetches nothing, because the new loadPath is only ever
  * used for a language the store is missing.
  *
+ * Only the bundled language needs this. Any other tag is missing from the store, so
+ * `preload` fetches it the ordinary way — reloading that one too would just ask for the
+ * same file twice. en-US, though, is reloaded whichever language is showing: it is the
+ * `fallbackLng` that fills every key the target language leaves out, and on a tenant
+ * address it is the tenant's own English, not the copy committed to this repository.
+ *
  * Deliberately not awaited: init resolves on the bundled copy so the page paints at once,
  * and the network read lands on top of it. A read that fails changes nothing, which is
  * the offline story. Values arrive by shallow merge, so the fetched copy wins per key.
  */
-function refresh(langTag: string): void {
-  void i18next.reloadResources([langTag]).catch(() => undefined);
+function refresh(): void {
+  void i18next.reloadResources([DEFAULT_LANG_TAG]).catch(() => undefined);
 }

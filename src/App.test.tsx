@@ -131,6 +131,30 @@ describe("App", () => {
     ).toBeInTheDocument();
   });
 
+  it("reads the fallback from the tenant too, and asks for the target language once", async () => {
+    const fetchSpy = vi.fn().mockRejectedValue(new TypeError("offline"));
+    vi.stubGlobal("fetch", fetchSpy);
+    window.history.replaceState({}, "", "/?tenant=acme&lang=ro-RO");
+
+    render(<App />);
+    await screen.findByText("Hii Retail corner shop");
+
+    const translations = fetchSpy.mock.calls
+      .map((call) => String(call[0]))
+      .filter((url) => url.includes("/translations/"));
+
+    // en-US is the fallbackLng filling every key the target language omits, and on a
+    // tenant address that is the tenant's own English — not the copy committed here.
+    // It ships bundled, so the connector thinks it has it and only an explicit reload
+    // fetches it.
+    expect(translations).toContain(
+      "https://translation.retailsvc.com/api/v1/tenants/acme/modules/trs-demo-app/translations/en-US",
+    );
+    // Reloading the target language too would ask for the same file twice: it is absent
+    // from the store, so preload already fetched it.
+    expect(translations.filter((url) => url.endsWith("/ro-RO"))).toHaveLength(1);
+  });
+
   it("reads the tenant address once a tenant id is entered", async () => {
     const fetchSpy = vi.fn().mockRejectedValue(new TypeError("offline"));
     vi.stubGlobal("fetch", fetchSpy);
