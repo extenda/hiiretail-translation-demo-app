@@ -4,17 +4,16 @@
 # scripts/publish-seed-layers.sh.
 name: Translations
 
+# Deliberately not filtered on `translations/**`. Publishing is part of what a deploy
+# does here, so every push to master republishes the default layer and every pull request
+# reports what a real run would do. Republishing an unchanged file is a no-op the service
+# answers with 200, and the read-back below then proves on every single deploy that the
+# copy the app serves is the copy this repository published.
 on:
   push:
     branches:
       - master
-    paths:
-      - translations/**
-      - .github/workflows/translations.yml
   pull_request:
-    paths:
-      - translations/**
-      - .github/workflows/translations.yml
   workflow_dispatch:
 
 permissions:
@@ -27,8 +26,16 @@ env:
 
 jobs:
   # A pull request only validates: it reports whether a real run would publish or skip.
+  #
+  # Skipped for a pull request from a fork. This repository is public, and GitHub withholds
+  # secrets from a fork's workflow run, so the action would have no credential to
+  # authenticate with and the job would fail on every such pull request. A skipped job says
+  # "not checked here" honestly; a red one would say the file is unpublishable, which is a
+  # different claim and not one this run is in a position to make.
   dry-run:
-    if: github.event_name == 'pull_request'
+    if: >-
+      github.event_name == 'pull_request'
+      && github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7

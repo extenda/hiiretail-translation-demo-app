@@ -122,6 +122,12 @@ runs the same action as a dry run.
 Descriptions in that file are written for whoever translates the key. They are the only
 context a translator gets.
 
+## Demoing the pipeline
+
+[`docs/DEMO.md`](docs/DEMO.md) is the script for showing how a word gets from this
+repository to the deployed app: what to open, what each workflow proves, how long each step
+takes, and the five-minute read cache that will otherwise make a live demo look broken.
+
 ## The publishing page
 
 [`#/admin`](https://translation-demo.retailsvc.com/#/admin) is the other half of the

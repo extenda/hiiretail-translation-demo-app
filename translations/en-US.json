@@ -4,7 +4,7 @@
     "description": "Name of the demo application, shown as the page heading"
   },
   "app.tagline": {
-    "value": "A worked example of reading translations from Translation Service",
+    "value": "Every word on this page was published by a GitHub Action",
     "description": "One-line explanation of what this application is, under the heading"
   },
   "app.greeting": {
