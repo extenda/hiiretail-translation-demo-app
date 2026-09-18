@@ -85,7 +85,9 @@ credential is not such a principal, however it is configured, so the pipeline pu
 English key set and nothing else. That is the design, not a gap in the workflow.
 
 [The publishing page](../README.md#the-publishing-page) at `#/admin` is how the other two
-layers get written by hand, with a token from someone who holds the role.
+layers get written, with a token from someone who holds the role. It loads a reviewed file
+from `seed/` rather than asking anyone to retype one — worth showing, because it is the
+answer to "so how does a translator's work actually get in?".
 
 ## Timings, so you can talk over the gaps
 

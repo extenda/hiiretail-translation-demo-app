@@ -1,7 +1,7 @@
 # Publishes this app's own default layer — the key set every translation is measured
 # against. The managed and tenant seed layers under seed/ are NOT published here: they are
-# gated on an Extenda IAM grant that no CI service account holds. See
-# scripts/publish-seed-layers.sh.
+# gated on an Extenda IAM grant that no CI service account holds, so they go through the
+# publishing page at #/admin, which loads a seed file straight into its editor.
 name: Translations
 
 # Deliberately not filtered on `translations/**`. Publishing is part of what a deploy
