@@ -88,3 +88,68 @@ p {
   color: var(--muted);
   font-size: 0.9rem;
 }
+
+/* Publishing page */
+
+fieldset.field {
+  border: none;
+  border-top: 1px solid var(--line);
+  padding: 1rem 0 0;
+  margin-top: 1.5rem;
+}
+
+fieldset legend {
+  font-weight: 600;
+  padding: 0;
+}
+
+fieldset label {
+  display: inline-block;
+  margin-right: 1rem;
+  font-weight: 400;
+}
+
+fieldset input[type="radio"] {
+  min-width: 0;
+  margin-right: 0.35rem;
+}
+
+ol.keys {
+  list-style: none;
+  padding: 0;
+}
+
+ol.keys > li {
+  border-top: 1px solid var(--line);
+}
+
+ol.keys input {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+ol.keys span {
+  display: block;
+  margin-top: 0.5rem;
+}
+
+ol.keys span label {
+  font-weight: 400;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.key code {
+  font-size: 0.95rem;
+  color: var(--accent);
+}
+
+.error {
+  color: #a6402c;
+  font-size: 0.9rem;
+}
+
+button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}

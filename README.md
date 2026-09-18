@@ -23,7 +23,11 @@ on in a test. Every field in it is load-bearing and the comments say what breaks
 | `keySeparator: false`, `nsSeparator: false` | `t("cart.count")` looks for a nested `cart` → `count` object, finds nothing, renders the raw key |
 | `en-US` in `preload` + `fallbackLng` | a key missing from the target language renders as the raw key |
 | `interpolation: { escapeValue: false }` | React escapes again and `&`/`<` come out double-escaped |
-| `partialBundledLanguages: true` | i18next skips the backend for any language in `resources` — stuck on the last release forever |
+| `partialBundledLanguages: true` | i18next never consults the backend at all once `resources` is set |
+| `load: "currentOnly"` | `en-US` also resolves to bare `en`, and every load fires a second request the service answers `400` |
+| `backend.parse` | the whole `{module, langTag, entries}` envelope is stored as the bundle, every key misses, and the committed copy renders in its place |
+| `react: { bindI18nStore: "added" }` | the network copy arrives after the first paint, is stored, and is never rendered |
+| `reloadResources` (in [`init.ts`](src/i18n/init.ts)) | the backend skips `en-US` because it is already in the store, so the service is never read |
 | `i18next-icu` (in [`init.ts`](src/i18n/init.ts)) | a plural renders as raw `{count, plural, ...}` syntax |
 
 [`src/i18n/load-path.ts`](src/i18n/load-path.ts) is the other half: one URL template, and a
@@ -70,6 +74,17 @@ secret, and both read endpoints are public by design.
 mutating the live instance. That is why the tenant lives in the URL and not in component
 state.
 
+The language lives there too, for a reason the tenant layer makes plain:
+
+```
+https://translation-demo.retailsvc.com/?tenant=acme&lang=sv-SE
+```
+
+`GET /modules/trs-demo-app/language-tags` covers the `default` and `managed` layers alone,
+so a language a tenant publishes **for itself is never listed** and the selector can never
+offer it. Naming it in the address is the only way to reach it, and the selector adds
+whatever the URL asked for so the state stays visible. Omit `lang` and it is `en-US`.
+
 ## Caching
 
 There is no caching code in this repository, and there should not be. Reads come back with:
@@ -107,6 +122,38 @@ runs the same action as a dry run.
 Descriptions in that file are written for whoever translates the key. They are the only
 context a translator gets.
 
+## The publishing page
+
+[`#/admin`](https://translation-demo.retailsvc.com/#/admin) is the other half of the
+integration: the storefront shows an anonymous read, and this shows the authenticated write
+behind it — the half a client app never performs and the guide can otherwise only describe.
+
+Paste a token from a principal holding `trs.translation.publish`, pick `managed` or
+`tenant`, pick a published language or type a new tag, and the form fills with that
+language's current file. Publishing `PUT`s the layer file and reports `201` created or
+`200` replaced; a rejection is shown as the service's own violation list, which names the
+key and field it objected to.
+
+The page is shaped by what the API allows, and four of its rules are visible in the UI:
+
+- **Adding a language and editing one are the same call.** A publish replaces the whole
+  layer file for that tag, so the form opens on what is already there — otherwise a
+  publish would truncate every key the editor did not show.
+- **There is no delete.** The service exposes publish only, so nothing here removes a
+  language. That is stated on the page rather than hidden behind a control that cannot work.
+- **A plural key needs every form the target language uses.** Swedish takes two, Polish
+  four. The page asks for one box per category from `Intl.PluralRules`, which is the set
+  the service validates against.
+- **`description` and `parameters` never travel.** The `default` layer owns them; sending
+  either is a 422. A translation restates the copy, never the contract behind it.
+
+The `default` layer is deliberately absent: CI publishes it from `translations/en-US.json`
+on every merge, so an edit here would be reverted by the next one.
+
+A tenant publish lands on the tenant in the token, never one named by the request — the
+`?tenant=` box scopes reads on the storefront and has no bearing on where a write goes.
+The token is held in memory for the page and never stored, logged or put in the URL.
+
 ## Known gap: the language selector shows only English
 
 The selector lists what `GET /modules/trs-demo-app/language-tags` returns, which covers the
@@ -132,6 +179,22 @@ the **Translation Admin** role (`trs.admin`):
 ```bash
 TRS_TOKEN=... ./scripts/publish-seed-layers.sh
 ```
+
+[The publishing page](#the-publishing-page) does the same thing interactively with the same
+token, one language at a time.
+
+A staff token can publish the `tenant` layer but not `managed`: both need
+`trs.translation.publish`, and `managed` additionally needs the caller to be in the Extenda
+tenant (`check_tenant_extenda` in the service's `ingress.rego`), which is the guard that
+keeps a tenant admin out of the copy every tenant reads. A denial arrives from the gateway
+with an empty body, so the status is the whole message — the publishing page spells out
+what each one means.
+
+The Swedish tenant overrides in `seed/tenant/` are published for tenant
+`CIR7nQwtS0rA6t0S6ejd` and visible at
+[`?tenant=CIR7nQwtS0rA6t0S6ejd&lang=sv-SE`](https://translation-demo.retailsvc.com/?tenant=CIR7nQwtS0rA6t0S6ejd&lang=sv-SE).
+They do not appear in the language list, and they never will — see [Tenant
+scope](#tenant-scope).
 
 Once such a principal exists as a CI identity, that script becomes a workflow step and this
 section goes away.

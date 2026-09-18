@@ -1,4 +1,8 @@
 {
-  "app.title": { "value": "Demobutiken" },
-  "checkout.button.pay": { "value": "Slutför köp {amount}", "parameters": ["amount"] }
+  "app.title": {
+    "value": "Demobutiken"
+  },
+  "checkout.button.pay": {
+    "value": "Slutför köp {amount}"
+  }
 }
