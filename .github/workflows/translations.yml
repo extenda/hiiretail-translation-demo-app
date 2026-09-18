@@ -4,17 +4,16 @@
 # scripts/publish-seed-layers.sh.
 name: Translations
 
+# Deliberately not filtered on `translations/**`. Publishing is part of what a deploy
+# does here, so every push to master republishes the default layer and every pull request
+# reports what a real run would do. Republishing an unchanged file is a no-op the service
+# answers 200 to, and the read-back below then proves on every single deploy that the copy
+# the app serves is the copy this repository published.
 on:
   push:
     branches:
       - master
-    paths:
-      - translations/**
-      - .github/workflows/translations.yml
   pull_request:
-    paths:
-      - translations/**
-      - .github/workflows/translations.yml
   workflow_dispatch:
 
 permissions:
