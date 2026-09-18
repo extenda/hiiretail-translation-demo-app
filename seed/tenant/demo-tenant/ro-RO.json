@@ -1,0 +1,45 @@
+{
+  "app.title": {
+    "value": "Hii-Retail magazin"
+  },
+  "app.tagline": {
+    "value": "Fiecare cuvânt de pe această pagină a fost publicat de o acțiune GitHub"
+  },
+  "app.greeting": {
+    "value": "Salut, {name}"
+  },
+  "tenant.label": {
+    "value": "ID tenant"
+  },
+  "tenant.hint": {
+    "value": "Introduceți un ID de tenant pentru a citi textele acelui tenant. Nu este necesară autentificarea."
+  },
+  "tenant.shared": {
+    "value": "Se citește adresa comună"
+  },
+  "language.label": {
+    "value": "Limbă"
+  },
+  "cart.heading": {
+    "value": "Coșul tău"
+  },
+  "cart.count": {
+    "value": "{count} de produse",
+    "plural": {
+      "forms": {
+        "one": "{count} produs",
+        "few": "{count} produse",
+        "other": "{count} de produse"
+      }
+    }
+  },
+  "cart.empty": {
+    "value": "Coșul tău este gol"
+  },
+  "cart.total": {
+    "value": "Total {amount}"
+  },
+  "checkout.button.pay": {
+    "value": "Plătește {amount}"
+  }
+}
