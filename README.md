@@ -178,6 +178,14 @@ That is not an oversight in the pipeline. The three layers are gated differently
 account token does not satisfy it, so the pipeline's credential cannot publish those layers
 however it is configured.
 
+A pipeline can publish **exactly one file**: `translations/en-US.json` to the `default`
+layer. That is not a limitation of this workflow — the `default` layer accepts no other
+language tag, and the layers that carry other languages are gated on a grant no pipeline
+credential satisfies. See [Publishing from a
+pipeline](https://github.com/extenda/engineering-cloud-core-common/blob/master/docs/translation-service/public/integration/PUBLISHING-FROM-CI.md)
+and [Layers](https://github.com/extenda/engineering-cloud-core-common/blob/master/docs/translation-service/public/concepts/LAYERS.md).
+So there is no workflow that ships `sv-SE.json` alongside it, and there cannot be one.
+
 Swedish, Finnish and Romanian wording and one tenant override are ready in `seed/`. Each
 file is named for its tag, and [the publishing page](#the-publishing-page) loads one
 straight into its editor: pick the file, check what it filled in, publish. A token from a

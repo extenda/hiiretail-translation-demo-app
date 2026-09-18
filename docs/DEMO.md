@@ -34,8 +34,13 @@ Loaded 12 entries from translations/en-US.json
 Dry run: would publish the default layer for trs-demo-app to https://translation.retailsvc.dev.
 ```
 
-Two lines, about 20 seconds. Nothing is published. This is the check that tells a reviewer
-whether the file is publishable before anyone merges it.
+Two lines, about 20 seconds. Nothing is published.
+
+Be careful what you claim for this step. Per [the publishing
+guide](https://github.com/extenda/engineering-cloud-core-common/blob/master/docs/translation-service/public/integration/PUBLISHING-FROM-CI.md),
+a dry run reports publish-or-skip **and nothing more** — validation happens on publish, so
+a file that will be rejected with `422` passes a dry run silently. It tells a reviewer that
+a real run would publish. It does not tell anyone the content is good.
 
 ### 3. Merge
 
