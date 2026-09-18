@@ -99,6 +99,23 @@ layers get written by hand, with a token from someone who holds the role.
 The two workflows run in parallel, so a merge to a visible change is about three minutes —
 plus the cache, which the private window removes.
 
+## One thing that looks like a bug and is not
+
+`Build and Deploy` refreshes the committed offline bundle by fetching the published file
+(`scripts/bundle-translations.sh`, step *Refresh offline bundle*), and it runs **in
+parallel** with `Translations`. It reaches that step within about half a minute, while the
+publish takes around two — so on the very merge that changes a word, the image almost
+always ships the *previous* wording in its offline bundle.
+
+That is harmless and self-correcting: the bundle is what paints first, and the network read
+lands on top of it a moment later with the new text. But if you are watching closely you
+may catch a flicker of the old wording on first load, and the bundle inside that image
+stays stale until the next deploy.
+
+If you would rather not explain that on stage, deploy twice: merge the wording change, let
+both workflows finish, then re-run `Build and Deploy` so the bundle matches. The second run
+takes about three minutes and changes nothing else.
+
 ## If the network fails on stage
 
 The app renders from `src/offline/trs-demo-app.en-US.json`, a committed copy of the
