@@ -34,8 +34,13 @@ Loaded 12 entries from translations/en-US.json
 Dry run: would publish the default layer for trs-demo-app to https://translation.retailsvc.dev.
 ```
 
-Two lines, about 20 seconds. Nothing is published. This is the check that tells a reviewer
-whether the file is publishable before anyone merges it.
+Two lines, about 20 seconds. Nothing is published.
+
+Be careful what you claim for this step. Per [the publishing
+guide](https://github.com/extenda/engineering-cloud-core-common/blob/master/docs/translation-service/public/integration/PUBLISHING-FROM-CI.md),
+a dry run reports publish-or-skip **and nothing more** — validation happens on publish, so
+a file that will be rejected with `422` passes a dry run silently. It tells a reviewer that
+a real run would publish. It does not tell anyone the content is good.
 
 ### 3. Merge
 
@@ -85,7 +90,9 @@ credential is not such a principal, however it is configured, so the pipeline pu
 English key set and nothing else. That is the design, not a gap in the workflow.
 
 [The publishing page](../README.md#the-publishing-page) at `#/admin` is how the other two
-layers get written by hand, with a token from someone who holds the role.
+layers get written, with a token from someone who holds the role. It loads a reviewed file
+from `seed/` rather than asking anyone to retype one — worth showing, because it is the
+answer to "so how does a translator's work actually get in?".
 
 ## Timings, so you can talk over the gaps
 

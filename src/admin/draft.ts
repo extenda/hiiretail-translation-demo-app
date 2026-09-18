@@ -1,4 +1,4 @@
-import type { PluralForms, TranslationEntries } from "../api/publish";
+import { isFullLanguageTag, type PluralForms, type TranslationEntries } from "../api/publish";
 import { categoriesOf } from "./plural-categories";
 
 export interface DraftEntry {
@@ -108,4 +108,34 @@ export function entriesToPublish(
   }
 
   return entries;
+}
+
+/**
+ * The seed files are named for the tag they carry (`ro-RO.json`), which is also how
+ * publish-seed-layers.sh knew where to send them. Picking the tag out of the name saves
+ * choosing it twice and getting it wrong once.
+ */
+export function langTagFromFileName(name: string): string | undefined {
+  const tag = name.replace(/\.json$/i, "");
+  return isFullLanguageTag(tag) ? tag : undefined;
+}
+
+/**
+ * What the service would reject about a loaded file, said before it is sent. The editor
+ * can only show keys the module declares, so a file carrying anything else would have
+ * that silently dropped — better to name it than to publish less than the file said.
+ */
+export function fileViolations(
+  entries: TranslationEntries,
+  keySet: TranslationEntries,
+): string[] {
+  return Object.entries(entries).flatMap(([key, entry]) => [
+    ...(key in keySet ? [] : [`${key} is not a key of the default layer`]),
+    ...(["description", "parameters"] as const)
+      .filter((field) => entry[field] !== undefined)
+      .map((field) => `${key}.${field} is owned by the default layer`),
+    ...(entry.plural?.parameter !== undefined
+      ? [`${key}.plural.parameter is owned by the default layer`]
+      : []),
+  ]);
 }

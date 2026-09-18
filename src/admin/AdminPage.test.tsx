@@ -49,6 +49,73 @@ beforeEach(() => window.history.replaceState({}, "", "/"));
 afterEach(() => vi.unstubAllGlobals());
 
 describe("AdminPage", () => {
+  it("fills the editor from a reviewed file and takes the tag from its name", async () => {
+    const fetchSpy = service();
+    vi.stubGlobal("fetch", fetchSpy);
+
+    render(<AdminPage tenantId={undefined} />);
+    await userEvent.type(await screen.findByLabelText("IAM token"), "t0ken");
+
+    const file = new File(
+      [
+        JSON.stringify({
+          "app.title": { value: "Hii-Retail magazin" },
+          "cart.count": {
+            value: "{count} de produse",
+            plural: {
+              forms: {
+                one: "{count} produs",
+                few: "{count} produse",
+                other: "{count} de produse",
+              },
+            },
+          },
+        }),
+      ],
+      "ro-RO.json",
+      { type: "application/json" },
+    );
+
+    await userEvent.upload(screen.getByLabelText("Load a translation file"), file);
+
+    // The file is named for its tag, so the language does not have to be chosen twice.
+    expect(await screen.findByLabelText("New language tag")).toHaveValue("ro-RO");
+    await waitFor(() =>
+      expect(screen.getByLabelText("Translation")).toHaveValue("Hii-Retail magazin"),
+    );
+    // Romanian counts in three categories, so there are three boxes, already filled.
+    expect(screen.getByLabelText("few")).toHaveValue("{count} produse");
+
+    await userEvent.click(screen.getByRole("button", { name: /^Publish 2 keys/ }));
+    await waitFor(() => expect(screen.getByRole("status")).toBeInTheDocument());
+
+    const put = fetchSpy.mock.calls.find(([, init]) => init?.method === "PUT");
+    expect(String(put?.[0])).toContain("/translations/ro-RO/layers/managed");
+    expect(JSON.parse(String(put?.[1]?.body)).entries["cart.count"].plural.forms).toEqual({
+      one: "{count} produs",
+      few: "{count} produse",
+      other: "{count} de produse",
+    });
+  });
+
+  it("names what the service would reject in a loaded file, before sending it", async () => {
+    vi.stubGlobal("fetch", service());
+
+    render(<AdminPage tenantId={undefined} />);
+
+    const file = new File(
+      [JSON.stringify({ "app.greeting": { value: "Salut", parameters: ["name"] } })],
+      "ro-RO.json",
+      { type: "application/json" },
+    );
+
+    await userEvent.upload(await screen.findByLabelText("Load a translation file"), file);
+
+    expect(
+      await screen.findByText("app.greeting.parameters is owned by the default layer"),
+    ).toBeInTheDocument();
+  });
+
   it("says plainly that a language cannot be deleted", async () => {
     vi.stubGlobal("fetch", service());
 

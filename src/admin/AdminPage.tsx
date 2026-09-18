@@ -14,7 +14,9 @@ import { KeyEditor } from "./KeyEditor";
 import {
   draftFrom,
   entriesToPublish,
+  fileViolations,
   incompletePlurals,
+  langTagFromFileName,
   tenantOverrides,
   type Draft,
 } from "./draft";
@@ -43,6 +45,7 @@ export function AdminPage({ tenantId }: { tenantId: string | undefined }) {
   const [problem, setProblem] = useState<string>();
   const [outcome, setOutcome] = useState<Outcome>();
   const [busy, setBusy] = useState(false);
+  const [loaded, setLoaded] = useState<{ name: string; problems: string[] } | undefined>();
 
   const langTag = selection === ADD_NEW ? newTag.trim() : selection;
   const tagIsValid = langTag !== "" && isFullLanguageTag(langTag);
@@ -94,6 +97,36 @@ export function AdminPage({ tenantId }: { tenantId: string | undefined }) {
 
     return () => controller.abort();
   }, [keySet, langTag, tagIsValid, layer, tenantId]);
+
+  /**
+   * A reviewed translation file, straight into the editor. The seed files under `seed/`
+   * are this shape, and they are where a language gets read and argued over in a pull
+   * request — a page cannot offer that, and retyping twelve strings and three plural
+   * forms by hand is how a reviewed translation stops matching what was reviewed.
+   */
+  const loadFile = useCallback(
+    async (file: File) => {
+      if (!keySet) return;
+
+      try {
+        const parsed = JSON.parse(await file.text()) as TranslationEntries;
+        const problems = fileViolations(parsed, keySet);
+
+        setDraft(draftFrom(keySet, parsed));
+        setLoaded({ name: file.name, problems });
+        setOutcome(undefined);
+
+        const named = langTagFromFileName(file.name);
+        if (named && selection !== named) {
+          setSelection(tags.includes(named) ? named : ADD_NEW);
+          if (!tags.includes(named)) setNewTag(named);
+        }
+      } catch {
+        setLoaded({ name: file.name, problems: ["Could not read this file as JSON."] });
+      }
+    },
+    [keySet, selection, tags],
+  );
 
   const setValue = useCallback((key: string, value: string) => {
     setDraft((current) => ({ ...current, [key]: { ...current[key], value } }));
@@ -184,6 +217,39 @@ export function AdminPage({ tenantId }: { tenantId: string | undefined }) {
                 }`}
           </p>
         </fieldset>
+
+        <div className="field">
+          <label htmlFor="seed-file">Load a translation file</label>
+          <input
+            id="seed-file"
+            type="file"
+            accept="application/json,.json"
+            onChange={(event) => {
+              const file = event.target.files?.[0];
+              if (file) void loadFile(file);
+            }}
+          />
+          <p className="hint">
+            A reviewed file from <code>seed/</code>, named for its tag (<code>ro-RO.json</code>).
+            It fills the editor; nothing is sent until you publish.
+          </p>
+          {loaded && (
+            <>
+              <p className="hint">
+                Loaded <code>{loaded.name}</code>.
+              </p>
+              {loaded.problems.length > 0 && (
+                <ul>
+                  {loaded.problems.map((problem) => (
+                    <li key={problem} className="error">
+                      {problem}
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </>
+          )}
+        </div>
 
         <div className="field">
           <label htmlFor="language">Language</label>

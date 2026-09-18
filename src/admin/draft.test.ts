@@ -3,7 +3,9 @@ import type { TranslationEntries } from "../api/publish";
 import {
   draftFrom,
   entriesToPublish,
+  fileViolations,
   incompletePlurals,
+  langTagFromFileName,
   tenantOverrides,
 } from "./draft";
 
@@ -147,5 +149,48 @@ describe("incompletePlurals", () => {
     draft["cart.count"].forms = { one: "{count} vara", other: "{count} varor" };
 
     expect(incompletePlurals(draft, keySet, "sv-SE")).toEqual([]);
+  });
+});
+
+describe("langTagFromFileName", () => {
+  it("takes the tag from a seed file's name", () => {
+    expect(langTagFromFileName("ro-RO.json")).toBe("ro-RO");
+    expect(langTagFromFileName("sv-SE.json")).toBe("sv-SE");
+  });
+
+  it("ignores a name that is not a full tag", () => {
+    expect(langTagFromFileName("translations.json")).toBeUndefined();
+    expect(langTagFromFileName("en.json")).toBeUndefined();
+  });
+});
+
+describe("fileViolations", () => {
+  it("passes a file the service would accept", () => {
+    expect(fileViolations({ "app.title": { value: "Hii-Retail magazin" } }, keySet)).toEqual([]);
+  });
+
+  it("names a key the module never declared", () => {
+    expect(fileViolations({ "app.unknown": { value: "x" } }, keySet)).toEqual([
+      "app.unknown is not a key of the default layer",
+    ]);
+  });
+
+  it("names the fields the default layer owns", () => {
+    // Exactly what made the seed files unpublishable before they were corrected.
+    const violations = fileViolations(
+      {
+        "app.greeting": { value: "Salut, {name}", parameters: ["name"] },
+        "cart.count": {
+          value: "{count} produse",
+          plural: { parameter: "count", forms: { other: "{count} produse" } },
+        },
+      },
+      keySet,
+    );
+
+    expect(violations).toEqual([
+      "app.greeting.parameters is owned by the default layer",
+      "cart.count.plural.parameter is owned by the default layer",
+    ]);
   });
 });

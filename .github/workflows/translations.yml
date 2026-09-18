@@ -1,14 +1,18 @@
 # Publishes this app's own default layer — the key set every translation is measured
 # against. The managed and tenant seed layers under seed/ are NOT published here: they are
-# gated on an Extenda IAM grant that no CI service account holds. See
-# scripts/publish-seed-layers.sh.
+# gated on an Extenda IAM grant that no CI service account holds, so they go through the
+# publishing page at #/admin, which loads a seed file straight into its editor.
 name: Translations
 
 # Deliberately not filtered on `translations/**`. Publishing is part of what a deploy
 # does here, so every push to master republishes the default layer and every pull request
-# reports what a real run would do. Republishing an unchanged file is a no-op the service
-# answers with 200, and the read-back below then proves on every single deploy that the
-# copy the app serves is the copy this repository published.
+# reports what a real run would do.
+#
+# This costs nothing when the wording has not changed: the action reads the published file
+# first and skips a publish that would change nothing, precisely so a pipeline running on
+# every release does not invalidate every client's cached copy. The read-back below then
+# proves on every single deploy that the copy the app serves is the copy this repository
+# published.
 on:
   push:
     branches:

@@ -178,16 +178,23 @@ That is not an oversight in the pipeline. The three layers are gated differently
 account token does not satisfy it, so the pipeline's credential cannot publish those layers
 however it is configured.
 
-Swedish and Finnish wording and one tenant override are ready in `seed/`.
-`scripts/publish-seed-layers.sh` publishes them, and needs a token from a principal holding
-the **Translation Admin** role (`trs.admin`):
+A pipeline can publish **exactly one file**: `translations/en-US.json` to the `default`
+layer. That is not a limitation of this workflow — the `default` layer accepts no other
+language tag, and the layers that carry other languages are gated on a grant no pipeline
+credential satisfies. See [Publishing from a
+pipeline](https://github.com/extenda/engineering-cloud-core-common/blob/master/docs/translation-service/public/integration/PUBLISHING-FROM-CI.md)
+and [Layers](https://github.com/extenda/engineering-cloud-core-common/blob/master/docs/translation-service/public/concepts/LAYERS.md).
+So there is no workflow that ships `sv-SE.json` alongside it, and there cannot be one.
 
-```bash
-TRS_TOKEN=... ./scripts/publish-seed-layers.sh
-```
+Swedish, Finnish and Romanian wording and one tenant override are ready in `seed/`. Each
+file is named for its tag, and [the publishing page](#the-publishing-page) loads one
+straight into its editor: pick the file, check what it filled in, publish. A token from a
+principal holding `trs.translation.publish` is the only other thing needed.
 
-[The publishing page](#the-publishing-page) does the same thing interactively with the same
-token, one language at a time.
+Those files live in git because that is where a translation gets read and argued over
+before anyone publishes it. The page is how a reviewed file reaches the service without
+being retyped — twelve strings and three plural forms, typed by hand, is how a translation
+stops matching the one that was reviewed.
 
 A staff token can publish the `tenant` layer but not `managed`: both need
 `trs.translation.publish`, and `managed` additionally needs the caller to be in the Extenda

@@ -1,5 +1,5 @@
 import { expect, it } from "vitest";
-import { readFileSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
 
 const published = JSON.parse(readFileSync("translations/en-US.json", "utf8"));
 const bundled = JSON.parse(readFileSync("src/offline/trs-demo-app.en-US.json", "utf8"));
@@ -28,14 +28,17 @@ it("the seeded languages cover the same keys as the default layer", () => {
   }
 });
 
+// Every seed file there is, found rather than listed, so a new language is covered the
+// moment someone adds one.
+const seeds = readdirSync("seed", { recursive: true })
+  .map(String)
+  .filter((entry) => entry.endsWith(".json"))
+  .map((entry) => `seed/${entry}`);
+
 it("a seeded translation carries no field the default layer owns", () => {
   // The service answers 422 for description, parameters or plural.parameter outside the
   // default layer: a translation restates the copy, never the contract behind it.
-  const seeds = [
-    "seed/managed/sv-SE.json",
-    "seed/managed/fi-FI.json",
-    "seed/tenant/demo-tenant/sv-SE.json",
-  ];
+  expect(seeds.length).toBeGreaterThan(0);
 
   for (const path of seeds) {
     for (const [key, entry] of Object.entries(JSON.parse(readFileSync(path, "utf8")))) {
@@ -45,6 +48,29 @@ it("a seeded translation carries no field the default layer owns", () => {
         entry.plural?.parameter,
         `${path} ${key} carries plural.parameter`,
       ).toBeUndefined();
+    }
+  }
+});
+
+it("a seeded plural carries every form its language requires", () => {
+  // Swedish needs one and other; Romanian needs one, few and other. A file written to
+  // Swedish's shape publishes for Swedish and is a 422 for Romanian, and the message
+  // arrives only after the round trip.
+  const ORDER = ["zero", "one", "two", "few", "many", "other"];
+
+  for (const path of seeds) {
+    const langTag = path.split("/").pop().replace(".json", "");
+    const required = ORDER.filter((category) =>
+      new Intl.PluralRules(langTag).resolvedOptions().pluralCategories.includes(category),
+    );
+
+    for (const [key, entry] of Object.entries(JSON.parse(readFileSync(path, "utf8")))) {
+      if (!entry.plural) continue;
+
+      expect(
+        Object.keys(entry.plural.forms).sort(),
+        `${path} ${key} does not match ${langTag}'s plural categories`,
+      ).toEqual([...required].sort());
     }
   }
 });
