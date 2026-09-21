@@ -38,4 +38,46 @@ describe("fetchLanguageTags", () => {
     stubFetch(new Response("", { status: 500 }));
     await expect(fetchLanguageTags()).rejects.toThrow(/500/);
   });
+
+  it("asks the tenant-scoped address once a tenant is in scope", async () => {
+    const spy = stubFetch(
+      new Response(JSON.stringify({ moduleId: "trs-demo-app", languageTags: ["en-US"] })),
+    );
+    await fetchLanguageTags("CIR7nQwtS0rA6t0S6ejd");
+    expect(spy.mock.calls[0][0]).toBe(
+      "https://translation.retailsvc.com/api/v1/tenants/CIR7nQwtS0rA6t0S6ejd/modules/trs-demo-app/language-tags",
+    );
+  });
+
+  it("escapes a tenant id rather than pasting it into the path", async () => {
+    const spy = stubFetch(
+      new Response(JSON.stringify({ moduleId: "trs-demo-app", languageTags: ["en-US"] })),
+    );
+    await fetchLanguageTags("a/b");
+    expect(spy.mock.calls[0][0]).toContain("/tenants/a%2Fb/modules/");
+  });
+
+  it("returns the tenant's own languages alongside the published ones", async () => {
+    stubFetch(
+      new Response(
+        JSON.stringify({
+          moduleId: "trs-demo-app",
+          languageTags: ["en-US", "ro-RO", "sv-SE"],
+        }),
+      ),
+    );
+    await expect(fetchLanguageTags("CIR7nQwtS0rA6t0S6ejd")).resolves.toEqual([
+      "en-US",
+      "ro-RO",
+      "sv-SE",
+    ]);
+  });
+
+  it("falls back to the module-wide address when no tenant is set", async () => {
+    const spy = stubFetch(
+      new Response(JSON.stringify({ moduleId: "trs-demo-app", languageTags: ["en-US"] })),
+    );
+    await fetchLanguageTags(undefined);
+    expect(spy.mock.calls[0][0]).not.toContain("/tenants/");
+  });
 });

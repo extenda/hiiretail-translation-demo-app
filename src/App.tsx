@@ -30,13 +30,22 @@ function Shell({
   const [tags, setTags] = useState<string[]>([DEFAULT_LANG_TAG]);
   const [error, setError] = useState<string | undefined>();
 
+  // Rebuilt per tenant, like loadPath. The abort guards matter: an abort is this effect
+  // replacing itself, and without them every tenant change reports a failure.
   useEffect(() => {
     const controller = new AbortController();
-    fetchLanguageTags(controller.signal)
-      .then(setTags)
-      .catch(() => setError("Could not list published languages — showing English only."));
+    setTags([DEFAULT_LANG_TAG]);
+    setError(undefined);
+    fetchLanguageTags(tenantId, controller.signal)
+      .then((published) => {
+        if (!controller.signal.aborted) setTags(published);
+      })
+      .catch(() => {
+        if (!controller.signal.aborted)
+          setError("Could not list published languages — showing English only.");
+      });
     return () => controller.abort();
-  }, []);
+  }, [tenantId]);
 
   return (
     <main>
@@ -44,9 +53,10 @@ function Shell({
       <p>{t("app.tagline")}</p>
       <p>{t("app.greeting", { name: VISITOR_NAME })}</p>
       <TenantForm tenantId={tenantId} onSubmit={setTenantId} />
-      {/* A tenant's own language is absent from /language-tags, which covers the default
-          and managed layers alone. The url can still name one, so the selector offers
-          whatever it was asked for rather than silently falling back to English. */}
+      {/* With a tenant in scope the list already carries that tenant's own languages.
+          Without one it covers the default and managed layers alone — and either way the
+          url can name a tag no list mentions, so the selector offers whatever it was
+          asked for rather than silently falling back to English. */}
       <LanguageSelector
         tags={tags.includes(langTag) ? tags : [...tags, langTag].sort()}
         current={langTag}
@@ -55,7 +65,7 @@ function Shell({
       {!tags.includes(langTag) && (
         <p className="hint">
           {langTag} is not in this module's published list — it is reachable because the
-          address names it. A language a tenant publishes for itself is never listed.
+          address names it.
         </p>
       )}
       <ErrorNote message={error} />

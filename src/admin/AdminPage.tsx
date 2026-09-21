@@ -54,7 +54,9 @@ export function AdminPage({ tenantId }: { tenantId: string | undefined }) {
     const controller = new AbortController();
 
     Promise.all([
-      fetchLanguageTags(controller.signal).catch(() => [] as string[]),
+      // Not tenant-scoped on purpose: ?tenant= is not the tenant a publish lands on — see
+      // publishLayer — so scoping here would list one tenant and write to another.
+      fetchLanguageTags(undefined, controller.signal).catch(() => [] as string[]),
       readKeySet(controller.signal),
     ])
       .then(([published, keys]) => {
