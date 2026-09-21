@@ -163,11 +163,17 @@ A tenant publish lands on the tenant in the token, never one named by the reques
 `?tenant=` box scopes reads on the storefront and has no bearing on where a write goes.
 The token is held in memory for the page and never stored, logged or put in the URL.
 
-## Known gap: the language selector shows only English
+## Known gap: the language selector shows only English until something is seeded
 
-The selector lists what `GET /modules/trs-demo-app/language-tags` returns, which covers the
-`default` and `managed` layers. This repository can only publish the `default` layer, so
-until someone seeds the others the list has one entry.
+With no tenant in scope the selector lists what `GET /modules/trs-demo-app/language-tags`
+returns, which covers the `default` and `managed` layers. This repository can only publish
+the `default` layer, so until someone seeds the others that list has one entry.
+
+A tenant in scope adds that tenant's own languages, from the tenant-scoped list described
+under [Tenant scope](#tenant-scope) — but only once that tenant has published something,
+which is the same gate. So the gap is not which list is read; it is that every layer
+carrying a language other than English is gated on a grant no pipeline credential
+satisfies.
 
 That is not an oversight in the pipeline. The three layers are gated differently:
 

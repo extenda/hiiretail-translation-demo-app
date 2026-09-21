@@ -54,9 +54,13 @@ export function AdminPage({ tenantId }: { tenantId: string | undefined }) {
     const controller = new AbortController();
 
     Promise.all([
-      // Tenant-scoped when there is a tenant: this page publishes that tenant's layer, so
-      // the languages it already has are the ones an editor is most likely replacing.
-      fetchLanguageTags(tenantId, controller.signal).catch(() => [] as string[]),
+      /*
+       * Deliberately not tenant-scoped, though this page has a tenant id to hand. That id
+       * comes from ?tenant=, and a publish lands on the tenant in the token instead — see
+       * publishLayer. Scoping the list to the query tenant would offer the languages of
+       * one tenant while the publish replaces another's layer.
+       */
+      fetchLanguageTags(undefined, controller.signal).catch(() => [] as string[]),
       readKeySet(controller.signal),
     ])
       .then(([published, keys]) => {
@@ -67,7 +71,7 @@ export function AdminPage({ tenantId }: { tenantId: string | undefined }) {
       .catch(() => setProblem("Could not reach Translation Service."));
 
     return () => controller.abort();
-  }, [tenantId]);
+  }, []);
 
   // Reloading whenever the target changes is what makes a publish a replace rather than a
   // silent truncation: whatever the language already has is in the form before it is sent.

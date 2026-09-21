@@ -172,6 +172,96 @@ describe("App", () => {
     );
   });
 
+  /*
+   * Changing tenant aborts the in-flight list request. An abort is this app doing its own
+   * housekeeping, not the service failing, so it must not reach the error note — and the
+   * previous tenant's languages must not stay in the selector while the new list loads.
+   */
+  it("does not report a failure when changing tenant aborts the list request", async () => {
+    // A stub that ignores the signal never rejects, so it cannot show this: real fetch
+    // rejects an aborted request with an AbortError, and that lands in the same catch as
+    // a service that is genuinely down.
+    let pending = 0;
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockImplementation(
+        (url: string, init?: RequestInit) =>
+          new Promise((resolve, reject) => {
+            const target = String(url);
+            if (!target.includes("/language-tags")) {
+              reject(new TypeError("offline"));
+              return;
+            }
+            init?.signal?.addEventListener("abort", () =>
+              reject(new DOMException("Aborted", "AbortError")),
+            );
+            // The first tenant's list settles; the second is left hanging so the third
+            // render's cleanup aborts it.
+            if (pending++ === 0) {
+              resolve(
+                new Response(
+                  JSON.stringify({ moduleId: "trs-demo-app", languageTags: ["en-US"] }),
+                ),
+              );
+            }
+          }),
+      ),
+    );
+
+    render(<App />);
+    await screen.findByText("Hii Retail corner shop");
+
+    await userEvent.type(screen.getByLabelText("Tenant id"), "acme");
+    await userEvent.click(screen.getByRole("button", { name: "Tenant id" }));
+    await userEvent.clear(screen.getByLabelText("Tenant id"));
+    await userEvent.type(screen.getByLabelText("Tenant id"), "other");
+    await userEvent.click(screen.getByRole("button", { name: "Tenant id" }));
+
+    await waitFor(() =>
+      expect(
+        screen.queryByText(/Could not list published languages/),
+      ).not.toBeInTheDocument(),
+    );
+  });
+
+  it("drops the previous tenant's languages while the new tenant's list loads", async () => {
+    let release: (() => void) | undefined;
+    const held = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    let call = 0;
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockImplementation(async (url: string) => {
+        const target = String(url);
+        if (target.includes("/language-tags")) {
+          // The first tenant answers at once; the second is still in flight.
+          if (call++ > 0) await held;
+          return new Response(
+            JSON.stringify({ moduleId: "trs-demo-app", languageTags: ["en-US", "ro-RO"] }),
+          );
+        }
+        throw new TypeError("offline");
+      }),
+    );
+    window.history.replaceState({}, "", "/?tenant=first");
+
+    render(<App />);
+    await waitFor(() =>
+      expect(screen.getByRole("option", { name: "ro-RO" })).toBeInTheDocument(),
+    );
+
+    await userEvent.clear(screen.getByLabelText("Tenant id"));
+    await userEvent.type(screen.getByLabelText("Tenant id"), "second");
+    await userEvent.click(screen.getByRole("button", { name: "Tenant id" }));
+
+    // ro-RO belonged to `first`. Until `second`'s list lands, it must not be on offer.
+    await waitFor(() =>
+      expect(screen.queryByRole("option", { name: "ro-RO" })).not.toBeInTheDocument(),
+    );
+    release?.();
+  });
+
   it("still flags a language no list mentions, reachable only because the url names it", async () => {
     vi.stubGlobal("fetch", tenantFetch({ tenantTags: ["en-US"] }));
     window.history.replaceState({}, "", "/?tenant=acme&lang=sv-SE");
