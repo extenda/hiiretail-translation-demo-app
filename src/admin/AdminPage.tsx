@@ -54,7 +54,9 @@ export function AdminPage({ tenantId }: { tenantId: string | undefined }) {
     const controller = new AbortController();
 
     Promise.all([
-      fetchLanguageTags(controller.signal).catch(() => [] as string[]),
+      // Tenant-scoped when there is a tenant: this page publishes that tenant's layer, so
+      // the languages it already has are the ones an editor is most likely replacing.
+      fetchLanguageTags(tenantId, controller.signal).catch(() => [] as string[]),
       readKeySet(controller.signal),
     ])
       .then(([published, keys]) => {
@@ -65,7 +67,7 @@ export function AdminPage({ tenantId }: { tenantId: string | undefined }) {
       .catch(() => setProblem("Could not reach Translation Service."));
 
     return () => controller.abort();
-  }, []);
+  }, [tenantId]);
 
   // Reloading whenever the target changes is what makes a publish a replace rather than a
   // silent truncation: whatever the language already has is in the form before it is sent.

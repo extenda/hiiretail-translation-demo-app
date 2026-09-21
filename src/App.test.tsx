@@ -7,6 +7,28 @@ beforeEach(() => window.history.replaceState({}, "", "/"));
 afterEach(() => window.history.replaceState({}, "", "/"));
 afterEach(() => vi.unstubAllGlobals());
 
+/*
+ * A service that answers the two language lists separately, so a test can say what the
+ * module published and what the tenant added without restating the whole fetch shape.
+ */
+function tenantFetch({ tenantTags }: { tenantTags: string[] }) {
+  return vi.fn().mockImplementation((url: string) => {
+    const target = String(url);
+    if (target.includes("/language-tags")) {
+      const languageTags = target.includes("/tenants/") ? tenantTags : ["en-US"];
+      return Promise.resolve(
+        new Response(JSON.stringify({ moduleId: "trs-demo-app", languageTags })),
+      );
+    }
+    if (target.includes("/tenants/acme/") && target.endsWith("/sv-SE")) {
+      return Promise.resolve(
+        new Response(JSON.stringify({ entries: { "app.title": "Demobutiken" } })),
+      );
+    }
+    return Promise.reject(new TypeError("offline"));
+  });
+}
+
 describe("App", () => {
   it("renders bundled text when the network is entirely unavailable", async () => {
     vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new TypeError("offline")));
@@ -98,34 +120,65 @@ describe("App", () => {
     expect(window.location.search).toBe("?tenant=acme");
   });
 
-  it("shows a tenant's own language, which the published list never mentions", async () => {
-    // Verified against production: a tenant-layer publish of sv-SE reads back at the
-    // tenant address, while /language-tags still answers ["en-US"] because it covers the
-    // default and managed layers alone. Without the url naming the language, the selector
-    // could never reach what was just published.
-    vi.stubGlobal(
-      "fetch",
-      vi.fn().mockImplementation((url: string) => {
-        const target = String(url);
-        if (target.includes("/language-tags")) {
-          return Promise.resolve(
-            new Response(JSON.stringify({ moduleId: "trs-demo-app", languageTags: ["en-US"] })),
-          );
-        }
-        if (target.includes("/tenants/acme/") && target.endsWith("/sv-SE")) {
-          return Promise.resolve(
-            new Response(JSON.stringify({ entries: { "app.title": "Demobutiken" } })),
-          );
-        }
-        return Promise.reject(new TypeError("offline"));
-      }),
-    );
+  it("offers a tenant's own language in the selector, not just in the url", async () => {
+    // The module-wide list answers ["en-US"] — it covers the default and managed layers
+    // alone — so a picker built from it can never reach what this tenant published for
+    // itself. The tenant-scoped list is what puts sv-SE in the selector.
+    vi.stubGlobal("fetch", tenantFetch({ tenantTags: ["en-US", "sv-SE"] }));
     window.history.replaceState({}, "", "/?tenant=acme&lang=sv-SE");
 
     render(<App />);
 
     expect(await screen.findByText("Demobutiken")).toBeInTheDocument();
     expect(screen.getByLabelText("Language")).toHaveValue("sv-SE");
+    await waitFor(() =>
+      expect(
+        screen.queryByText(/is not in this module's published list/),
+      ).not.toBeInTheDocument(),
+    );
+    expect(screen.getByRole("option", { name: "sv-SE" })).toBeInTheDocument();
+  });
+
+  it("asks the tenant-scoped list, not the module-wide one, once a tenant is in scope", async () => {
+    const fetchSpy = tenantFetch({ tenantTags: ["en-US", "sv-SE"] });
+    vi.stubGlobal("fetch", fetchSpy);
+    window.history.replaceState({}, "", "/?tenant=acme");
+
+    render(<App />);
+    await screen.findByText("Hii Retail corner shop");
+
+    await waitFor(() => {
+      const urls = fetchSpy.mock.calls.map((call) => String(call[0]));
+      expect(urls).toContain(
+        "https://translation.retailsvc.com/api/v1/tenants/acme/modules/trs-demo-app/language-tags",
+      );
+    });
+  });
+
+  // loadPath is rebuilt when the tenant changes; the language list has to follow, or the
+  // selector keeps offering the previous tenant's languages.
+  it("refetches the language list when the tenant changes", async () => {
+    const fetchSpy = tenantFetch({ tenantTags: ["en-US", "sv-SE"] });
+    vi.stubGlobal("fetch", fetchSpy);
+
+    render(<App />);
+    await screen.findByText("Hii Retail corner shop");
+
+    await userEvent.type(screen.getByLabelText("Tenant id"), "acme");
+    await userEvent.click(screen.getByRole("button", { name: "Tenant id" }));
+
+    await waitFor(() =>
+      expect(screen.getByRole("option", { name: "sv-SE" })).toBeInTheDocument(),
+    );
+  });
+
+  it("still flags a language no list mentions, reachable only because the url names it", async () => {
+    vi.stubGlobal("fetch", tenantFetch({ tenantTags: ["en-US"] }));
+    window.history.replaceState({}, "", "/?tenant=acme&lang=sv-SE");
+
+    render(<App />);
+
+    expect(await screen.findByText("Demobutiken")).toBeInTheDocument();
     expect(
       screen.getByText(/is not in this module's published list/),
     ).toBeInTheDocument();

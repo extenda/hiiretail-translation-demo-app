@@ -44,13 +44,6 @@ No proxy, no token, no local Translation Service. Reads are anonymous `GET`s and
 talks to production directly — in dev exactly as in production. That is deliberate: a demo
 that only works behind a dev proxy would not demonstrate the thing it claims to.
 
-> **This depends on a service change that has not shipped yet.** Translation Service
-> currently enables CORS only in the `local` environment, so staging and production return
-> no `Access-Control-Allow-Origin` and a browser drops every response — the app falls back
-> to its bundled English and the tenant field and language selector do nothing.
-> [extenda/hiiretail-translation-service#40](https://github.com/extenda/hiiretail-translation-service/pull/40)
-> fixes that. Delete this note once it is deployed.
-
 ```bash
 npm test          # vitest
 npm run build     # tsc -b && vite build
@@ -70,20 +63,30 @@ Entering one switches every read from `/modules/trs-demo-app/…` to
 overrides merged on top. No credential is involved: a tenant id is an identifier, not a
 secret, and both read endpoints are public by design.
 
+> It is the tenant **id**, not the tenant name. A name is a well-formed id, so nothing
+> rejects it: the read succeeds and answers the shared file, because a tenant with
+> nothing published reads the base file rather than 404ing. The only symptom is the
+> overrides quietly not being there.
+
 `loadPath` is fixed at `init()`, so changing tenant re-initialises i18next rather than
 mutating the live instance. That is why the tenant lives in the URL and not in component
 state.
 
-The language lives there too, for a reason the tenant layer makes plain:
+The language lives there too:
 
 ```
 https://translation-demo.retailsvc.com/?tenant=acme&lang=sv-SE
 ```
 
+Which list fills the selector follows the tenant, the same way `loadPath` does.
 `GET /modules/trs-demo-app/language-tags` covers the `default` and `managed` layers alone,
-so a language a tenant publishes **for itself is never listed** and the selector can never
-offer it. Naming it in the address is the only way to reach it, and the selector adds
-whatever the URL asked for so the state stays visible. Omit `lang` and it is `en-US`.
+so a language a tenant publishes for itself is not in it; with a tenant in scope the app
+asks `GET /tenants/{tenantId}/modules/trs-demo-app/language-tags` instead, which folds
+that tenant's own languages in and no one else's. Changing tenant refetches it.
+
+Naming a tag in the address still works and is still the only way to reach one no list
+mentions — the selector adds whatever the URL asked for, and says so, rather than
+silently falling back. Omit `lang` and it is `en-US`.
 
 ## Caching
 
