@@ -30,15 +30,8 @@ function Shell({
   const [tags, setTags] = useState<string[]>([DEFAULT_LANG_TAG]);
   const [error, setError] = useState<string | undefined>();
 
-  /*
-   * Rebuilt whenever the tenant changes, exactly as loadPath is: the tenant-scoped list is
-   * a different list, and keeping the previous tenant's would offer languages this one
-   * never published. So the old list goes before the new one is asked for.
-   *
-   * An abort is this effect replacing itself, not the service failing. It rejects like any
-   * other error, so without this guard every tenant change reports one — and a superseded
-   * request could still overwrite the current tenant's list on its way out.
-   */
+  // Rebuilt per tenant, like loadPath. The abort guards matter: an abort is this effect
+  // replacing itself, and without them every tenant change reports a failure.
   useEffect(() => {
     const controller = new AbortController();
     setTags([DEFAULT_LANG_TAG]);

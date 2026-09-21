@@ -7,10 +7,6 @@ beforeEach(() => window.history.replaceState({}, "", "/"));
 afterEach(() => window.history.replaceState({}, "", "/"));
 afterEach(() => vi.unstubAllGlobals());
 
-/*
- * A service that answers the two language lists separately, so a test can say what the
- * module published and what the tenant added without restating the whole fetch shape.
- */
 function tenantFetch({ tenantTags }: { tenantTags: string[] }) {
   return vi.fn().mockImplementation((url: string) => {
     const target = String(url);
@@ -121,9 +117,6 @@ describe("App", () => {
   });
 
   it("offers a tenant's own language in the selector, not just in the url", async () => {
-    // The module-wide list answers ["en-US"] — it covers the default and managed layers
-    // alone — so a picker built from it can never reach what this tenant published for
-    // itself. The tenant-scoped list is what puts sv-SE in the selector.
     vi.stubGlobal("fetch", tenantFetch({ tenantTags: ["en-US", "sv-SE"] }));
     window.history.replaceState({}, "", "/?tenant=acme&lang=sv-SE");
 
@@ -155,8 +148,6 @@ describe("App", () => {
     });
   });
 
-  // loadPath is rebuilt when the tenant changes; the language list has to follow, or the
-  // selector keeps offering the previous tenant's languages.
   it("refetches the language list when the tenant changes", async () => {
     const fetchSpy = tenantFetch({ tenantTags: ["en-US", "sv-SE"] });
     vi.stubGlobal("fetch", fetchSpy);
@@ -172,15 +163,9 @@ describe("App", () => {
     );
   });
 
-  /*
-   * Changing tenant aborts the in-flight list request. An abort is this app doing its own
-   * housekeeping, not the service failing, so it must not reach the error note — and the
-   * previous tenant's languages must not stay in the selector while the new list loads.
-   */
   it("does not report a failure when changing tenant aborts the list request", async () => {
-    // A stub that ignores the signal never rejects, so it cannot show this: real fetch
-    // rejects an aborted request with an AbortError, and that lands in the same catch as
-    // a service that is genuinely down.
+    // The stub has to honour the signal: one that ignores it never rejects, so it cannot
+    // reproduce this at all.
     let pending = 0;
     vi.stubGlobal(
       "fetch",
@@ -195,8 +180,7 @@ describe("App", () => {
             init?.signal?.addEventListener("abort", () =>
               reject(new DOMException("Aborted", "AbortError")),
             );
-            // The first tenant's list settles; the second is left hanging so the third
-            // render's cleanup aborts it.
+            // The second is left hanging so the next render's cleanup aborts it.
             if (pending++ === 0) {
               resolve(
                 new Response(
@@ -235,7 +219,6 @@ describe("App", () => {
       vi.fn().mockImplementation(async (url: string) => {
         const target = String(url);
         if (target.includes("/language-tags")) {
-          // The first tenant answers at once; the second is still in flight.
           if (call++ > 0) await held;
           return new Response(
             JSON.stringify({ moduleId: "trs-demo-app", languageTags: ["en-US", "ro-RO"] }),

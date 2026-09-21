@@ -54,12 +54,8 @@ export function AdminPage({ tenantId }: { tenantId: string | undefined }) {
     const controller = new AbortController();
 
     Promise.all([
-      /*
-       * Deliberately not tenant-scoped, though this page has a tenant id to hand. That id
-       * comes from ?tenant=, and a publish lands on the tenant in the token instead — see
-       * publishLayer. Scoping the list to the query tenant would offer the languages of
-       * one tenant while the publish replaces another's layer.
-       */
+      // Not tenant-scoped on purpose: ?tenant= is not the tenant a publish lands on — see
+      // publishLayer — so scoping here would list one tenant and write to another.
       fetchLanguageTags(undefined, controller.signal).catch(() => [] as string[]),
       readKeySet(controller.signal),
     ])

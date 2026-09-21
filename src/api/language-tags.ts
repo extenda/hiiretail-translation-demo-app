@@ -10,11 +10,9 @@ interface LanguageTagsResponse {
  * already asked for and has no notion of what is published, so this is deliberately kept
  * apart from the i18next setup.
  *
- * Which address answers depends on whether a tenant is in scope, the same way `loadPath`
- * switches. The module-wide list covers the default and managed layers only; the
- * tenant-scoped one adds the languages that tenant published for itself, which is exactly
- * the set a tenant's picker is otherwise missing. Either way a module with nothing
- * published answers 404 rather than an empty list — a normal state here, not a failure.
+ * A tenant in scope switches the address, the same way `loadPath` does: the tenant-scoped
+ * list adds that tenant's own languages. Either way 404 means nothing published yet, which
+ * is a normal state here, not a failure.
  */
 export async function fetchLanguageTags(
   tenantId?: string,

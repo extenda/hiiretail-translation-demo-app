@@ -39,8 +39,6 @@ describe("fetchLanguageTags", () => {
     await expect(fetchLanguageTags()).rejects.toThrow(/500/);
   });
 
-  // The module-wide list covers the default and managed layers alone, so a picker built
-  // from it is missing precisely the languages this tenant published for itself.
   it("asks the tenant-scoped address once a tenant is in scope", async () => {
     const spy = stubFetch(
       new Response(JSON.stringify({ moduleId: "trs-demo-app", languageTags: ["en-US"] })),
