@@ -179,12 +179,12 @@ That is not an oversight in the pipeline. The three layers are gated differently
 
 | Layer | Gate | From CI? |
 | --- | --- | --- |
-| `default` | `googletoken.check("trs.translation-api")` | yes — the cloud-core `ci-cd-pipeline` accounts are already allowed consumers |
+| `default` | a GitHub OIDC token from the repository that owns the module | yes — no service account and no secret |
 | `managed` | `check_permission("trs.translation.publish")` + Extenda tenant | **no** |
 | `tenant` | `check_permission("trs.translation.publish")` | **no** |
 
-`check_permission` resolves an Extenda IAM grant for a principal in a tenant. A GCP service
-account token does not satisfy it, so the pipeline's credential cannot publish those layers
+`check_permission` resolves an Extenda IAM grant for a principal in a tenant. A pipeline token,
+GitHub or service account, does not satisfy it, so the pipeline cannot publish those layers
 however it is configured.
 
 A pipeline can publish **exactly one file**: `translations/en-US.json` to the `default`

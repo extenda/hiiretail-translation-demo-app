@@ -81,9 +81,9 @@ Someone always asks why only English publishes from the pipeline.
 
 | Layer | Who authors it | From CI? |
 | --- | --- | --- |
-| `default` | the module team, in this repository | **yes** — `googletoken.check("trs.translation-api")`, and the cloud-core pipeline accounts are allowed consumers |
+| `default` | the module team, in this repository | **yes** — the workflow's GitHub OIDC token, from `master`, by the repository that owns the module |
 | `managed` | product management, for every tenant | **no** — `trs.translation.publish` **and** the caller must be in the Extenda tenant |
-| `tenant` | a tenant, for itself | **no** — `trs.translation.publish`, which a GCP service account token does not satisfy |
+| `tenant` | a tenant, for itself | **no** — `trs.translation.publish`, which a pipeline token does not carry |
 
 `check_permission` resolves an Extenda IAM grant for a principal in a tenant. A pipeline
 credential is not such a principal, however it is configured, so the pipeline publishes the
