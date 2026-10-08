@@ -122,11 +122,11 @@ to the `default` layer of module `trs-demo-app` on every merge to `master`, to s
 then production, and reads it back anonymously to prove the publish landed. A pull request
 runs the same action as a dry run.
 
-The workflow holds no service account key and reads no secret. It passes the action a workload
-identity federation config built in the workflow itself: the organisation's `github-oidc`
-provider and the cloud-core `ci-cd-pipeline` account. The job's GitHub OIDC token is traded
-for that account's identity at run time. The action authenticates only when it actually
-publishes: a dry run and an unchanged file make no authenticated call.
+No service account key is involved. `GCLOUD_AUTH_STAGING` and `GCLOUD_AUTH_PROD` are workload
+identity federation configs that `tf-infra-gcp` writes into this repository: the
+organisation's `github-oidc` provider and the cloud-core `ci-cd-pipeline` account. The job's
+GitHub OIDC token is traded for that account's identity at run time. The action authenticates
+only when it actually publishes: a dry run and an unchanged file make no authenticated call.
 
 Descriptions in that file are written for whoever translates the key. They are the only
 context a translator gets.
