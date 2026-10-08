@@ -1,0 +1,46 @@
+{
+  "app.title": {
+    "value": "Hii Retail крамничка біля дому"
+  },
+  "app.tagline": {
+    "value": "Робочий приклад читання перекладів із Translation Service"
+  },
+  "app.greeting": {
+    "value": "Привіт, {name}"
+  },
+  "tenant.label": {
+    "value": "Ідентифікатор орендаря"
+  },
+  "tenant.hint": {
+    "value": "Введіть ідентифікатор орендаря, щоб читати тексти цього клієнта. Вхід не потрібен."
+  },
+  "tenant.shared": {
+    "value": "Читаємо спільну адресу"
+  },
+  "language.label": {
+    "value": "Мова"
+  },
+  "cart.heading": {
+    "value": "Ваш кошик"
+  },
+  "cart.count": {
+    "value": "{count} товару",
+    "plural": {
+      "forms": {
+        "one": "{count} товар",
+        "few": "{count} товари",
+        "many": "{count} товарів",
+        "other": "{count} товару"
+      }
+    }
+  },
+  "cart.empty": {
+    "value": "Ваш кошик порожній"
+  },
+  "cart.total": {
+    "value": "Разом {amount}"
+  },
+  "checkout.button.pay": {
+    "value": "Оплатити {amount}"
+  }
+}
