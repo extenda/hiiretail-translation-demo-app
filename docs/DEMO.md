@@ -81,7 +81,7 @@ Someone always asks why only English publishes from the pipeline.
 
 | Layer | Who authors it | From CI? |
 | --- | --- | --- |
-| `default` | the module team, in this repository | **yes** — `googletoken.check("trs.translation-api")`, and the cloud-core pipeline accounts are allowed consumers |
+| `default` | the module team, in this repository | **yes** — `googletoken.check_token("trs.translation-api")`: any service account of an Extenda project, no allowed-consumers entry |
 | `managed` | product management, for every tenant | **no** — `trs.translation.publish` **and** the caller must be in the Extenda tenant |
 | `tenant` | a tenant, for itself | **no** — `trs.translation.publish`, which a GCP service account token does not satisfy |
 

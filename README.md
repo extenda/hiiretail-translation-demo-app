@@ -179,7 +179,7 @@ That is not an oversight in the pipeline. The three layers are gated differently
 
 | Layer | Gate | From CI? |
 | --- | --- | --- |
-| `default` | `googletoken.check("trs.translation-api")` | yes — the cloud-core `ci-cd-pipeline` accounts are already allowed consumers |
+| `default` | `googletoken.check_token("trs.translation-api")` | yes — any service account of an Extenda project, so the `ci-cd-pipeline` account needs no allowed-consumers entry |
 | `managed` | `check_permission("trs.translation.publish")` + Extenda tenant | **no** |
 | `tenant` | `check_permission("trs.translation.publish")` | **no** |
 
