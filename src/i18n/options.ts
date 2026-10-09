@@ -39,6 +39,11 @@ export function buildInitOptions(
     // lands after the first paint — which is every network read, now that the bundled
     // copy renders first — would be stored and never shown.
     react: { bindI18nStore: "added" },
+    // i18next-icu memoizes each compiled message by language, namespace and key alone, and
+    // by default never clears it. The bundled copy is compiled on the first paint, so a
+    // fetched copy that lands afterwards is stored and re-rendered, yet t() keeps answering
+    // the memoized bundled text. Clearing on the same store event lets the new copy through.
+    i18nFormat: { bindI18nStore: "added" },
     backend: {
       loadPath: loadPath(tenantId),
       // A read answers an envelope — {module, langTag, layer, format, entries} — and the

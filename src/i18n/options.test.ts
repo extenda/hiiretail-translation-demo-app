@@ -1,6 +1,24 @@
+import i18next from "i18next";
+import ICU from "i18next-icu";
 import { describe, expect, it } from "vitest";
 import { buildInitOptions } from "./options";
 import bundledEnUS from "../offline/trs-demo-app.en-US.json";
+
+describe("a fetched copy landing after the first paint", () => {
+  // The bug this guards: the page kept the bundled tagline after a publish, because
+  // i18next-icu answered t() from the message it memoized on the first paint.
+  it("is what t() answers, not the memoized bundled message", async () => {
+    const { backend: _backend, ...options } = buildInitOptions(undefined, "en-US");
+    const i18n = i18next.createInstance().use(ICU);
+    await i18n.init(options);
+
+    expect(i18n.t("app.tagline")).toBe(bundledEnUS["app.tagline"]);
+
+    i18n.addResourceBundle("en-US", "translation", { "app.tagline": "Published since" }, true, true);
+
+    expect(i18n.t("app.tagline")).toBe("Published since");
+  });
+});
 
 describe("buildInitOptions", () => {
   it("uses the requested language and falls back to en-US", () => {
